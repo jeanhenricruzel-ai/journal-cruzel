@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📋 Journal Cruzel — Vue Semaine</title>
+<style>
+:root {
+  --bg:#0A0A0A; --dark:#111; --card:#161616; --border:#252525;
+  --orange:#FF5722; --gold:#F5C842; --vert:#5DD87A;
+  --violet:#A97FFF; --bleu:#5FA8F5; --rose:#F472B6;
+  --txt:#F5F5EE; --txt2:#C0BFB5; --txt3:#888880;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--txt);font-family:'Trebuchet MS',Arial,sans-serif;font-size:14px;min-height:100vh;padding-bottom:80px;}
+
+/* HEADER */
+.header{background:var(--dark);border-bottom:3px solid var(--orange);padding:14px 18px 12px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px;}
+.header-left .sup{font-size:10px;color:var(--orange);font-weight:700;letter-spacing:4px;text-transform:uppercase;margin-bottom:4px;}
+.header-left h1{font-size:24px;font-weight:900;}
+.header-left h1 span{color:var(--orange);}
+.week-nav{display:flex;align-items:center;gap:8px;}
+.week-nav button{background:#1A1A1A;color:var(--txt2);border:1px solid #2A2A2A;padding:6px 13px;font-size:15px;cursor:pointer;transition:all .15s;}
+.week-nav button:hover{background:var(--orange);color:white;border-color:var(--orange);}
+.week-label{font-size:13px;font-weight:700;color:var(--txt);min-width:180px;text-align:center;}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;}
+.tab-btn{padding:10px 16px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--txt3);border-bottom:2px solid transparent;transition:all .2s;font-family:inherit;white-space:nowrap;}
+.tab-btn.active{color:var(--orange);border-bottom-color:var(--orange);}
+.content{padding:14px 16px;}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+
+/* GRILLE SEMAINE */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+.day-col{background:#141414;border:1px solid #2C2C2C;border-top:3px solid #333;min-height:300px;display:flex;flex-direction:column;transition:border-color .2s;}
+.day-col:hover{border-color:#3A3A3A;}
+.day-col.today{border-top-color:var(--orange);border-color:#3A2A22;background:#161210;}
+.day-col.weekend{border-top-color:#2A2A2A;background:#111;}
+.day-head{padding:10px 10px 7px;border-bottom:1px solid #252525;cursor:pointer;}
+.day-head:hover{background:#1C1C1C;}
+.day-name{font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:#808078;margin-bottom:3px;}
+.day-col.today .day-name{color:var(--orange);}
+.day-date{font-size:22px;font-weight:900;line-height:1;color:#D8D8D0;}
+.day-col.today .day-date{color:var(--orange);}
+.day-col.weekend .day-date{color:#666;}
+.day-body{flex:1;padding:8px 7px;}
+
+/* BLOCS RAPIDES */
+.quick-bloc{display:flex;align-items:center;gap:6px;padding:6px 7px;margin-bottom:5px;cursor:pointer;transition:all .15s;border:1px solid transparent;border-left:2px solid transparent;}
+.quick-bloc:hover{background:#1E1E1E;border-color:#303030;}
+.qb-icon{font-size:15px;min-width:20px;text-align:center;}
+.qb-content{flex:1;min-width:0;}
+.qb-label{font-size:10px;color:#909088;text-transform:uppercase;letter-spacing:.8px;line-height:1;margin-bottom:2px;font-weight:600;}
+.qb-val{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#D0D0C8;}
+.qb-status{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.status-done{background:#5DD87A;box-shadow:0 0 5px #5DD87A88;}
+.status-planned{background:#F5C842;box-shadow:0 0 5px #F5C84288;}
+.status-blocked{background:#FF5722;box-shadow:0 0 5px #FF572288;}
+.status-empty{background:#303030;}
+
+/* PHOTOS */
+.day-photos{padding:0 7px 7px;display:flex;gap:4px;flex-wrap:wrap;}
+.photo-thumb{width:40px;height:40px;object-fit:cover;border:1px solid #2A2A2A;cursor:pointer;}
+.add-photo{width:40px;height:40px;background:#161616;border:1px dashed #2A2A2A;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--txt3);transition:all .2s;}
+.add-photo:hover{border-color:var(--orange);color:var(--orange);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+.modal-overlay.hidden{display:none;}
+.modal{background:#131313;border:1px solid #2E2E2E;border-top:3px solid var(--orange);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;}
+.modal-head{padding:15px 18px;border-bottom:1px solid #252525;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#131313;z-index:1;}
+.modal-title{font-size:17px;font-weight:900;color:#F0F0E8;letter-spacing:.3px;}
+.modal-close{background:none;border:none;color:#808078;font-size:22px;cursor:pointer;padding:0 4px;}
+.modal-close:hover{color:var(--orange);}
+.modal-body{padding:16px 18px;}
+.modal-section{margin-bottom:20px;}
+.modal-section-title{font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #222;}
+.fg{margin-bottom:14px;}
+.fg label{font-size:11px;color:#A0A098;letter-spacing:1px;display:block;margin-bottom:6px;text-transform:uppercase;font-weight:700;}
+.fg input,.fg textarea,.fg select{width:100%;background:#0D0D0D;color:#E8E8E0;border:1px solid #2A2A2A;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;transition:all .2s;}
+.fg input:focus,.fg textarea:focus,.fg select:focus{border-color:var(--orange);background:#111;color:#F5F5EE;}
+.fg input::placeholder,.fg textarea::placeholder{color:#484840;}
+.fg input[type=number]{width:150px;}
+.fg textarea{resize:vertical;line-height:1.7;}
+.fg select{cursor:pointer;}
+.stars{display:flex;gap:5px;align-items:center;margin-top:4px;}
+.timer-box{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.timer-display{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;min-width:72px;color:#E8C40A;letter-spacing:1px;}
+.timer-btn{padding:5px 11px;border:1px solid #333;background:#1A1A1A;color:#ccc;font-size:11px;font-weight:700;cursor:pointer;border-radius:2px;letter-spacing:1px;transition:all .2s;}
+.timer-btn:hover{background:#2A2A2A;}
+.timer-btn.running{background:#1A2A1A;border-color:#4CAF5066;color:#4CAF50;}
+.timer-btn.stop{background:#2A1A1A;border-color:#FF572266;color:#FF5722;}
+.timer-total{font-size:12px;color:#888;margin-left:4px;}
+.timer-manual{width:80px!important;font-size:13px!important;padding:5px 8px!important;text-align:center;}
+.star{font-size:24px;cursor:pointer;color:#2A2A2A;transition:all .1s;display:inline-block;}
+.star.on{color:var(--orange);}
+.star:hover{transform:scale(1.2);}
+.status-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.status-btn{padding:7px 15px;font-size:11px;font-weight:800;border:1px solid #333;background:#0D0D0D;color:#888880;cursor:pointer;font-family:inherit;transition:all .15s;letter-spacing:.5px;}
+.status-btn:hover{color:#D0D0C8;border-color:#555;}
+.status-btn.active-done{background:#5DD87A18;border-color:#5DD87A;color:#5DD87A;}
+.status-btn.active-planned{background:#F5C84218;border-color:#F5C842;color:#F5C842;}
+.status-btn.active-blocked{background:#FF572218;border-color:#FF5722;color:#FF5722;}
+.btn-save-modal{background:var(--orange);color:white;border:none;padding:11px 22px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;width:100%;margin-top:6px;letter-spacing:1.5px;}
+.btn-save-modal:hover{background:#c73609;}
+
+/* LIENS */
+.links-area{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
+.link-row{display:flex;gap:6px;align-items:center;}
+.link-row input{flex:1;background:#0D0D0D;color:#E8E8E0;border:1px solid #2A2A2A;padding:7px 10px;font-size:13px;font-family:inherit;outline:none;}
+.link-row input:focus{border-color:var(--orange);}
+.link-row a{color:var(--bleu);font-size:18px;text-decoration:none;padding:4px;}
+.link-row button{background:#1A1A1A;border:1px solid #333;color:#888;padding:5px 9px;cursor:pointer;font-size:12px;}
+.link-row button:hover{border-color:#FF5722;color:#FF5722;}
+.add-link-btn{background:#0D0D0D;border:1px dashed #2A2A2A;color:var(--txt3);padding:7px 12px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;text-align:left;}
+.add-link-btn:hover{border-color:var(--bleu);color:var(--bleu);}
+
+/* PHOTOS MODAL */
+.photo-grid{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.photo-modal-thumb{position:relative;width:80px;height:80px;}
+.photo-modal-thumb img{width:100%;height:100%;object-fit:cover;border:1px solid #2A2A2A;}
+.photo-del{position:absolute;top:1px;right:1px;background:rgba(0,0,0,.8);color:white;border:none;font-size:10px;cursor:pointer;padding:2px 5px;line-height:1;}
+.add-photo-modal{width:80px;height:80px;background:#161616;border:1px dashed #2A2A2A;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--txt3);transition:all .2s;}
+.add-photo-modal:hover{border-color:var(--orange);color:var(--orange);}
+
+/* STATS SEMAINE */
+.week-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-bottom:16px;}
+.stat-card{background:var(--dark);border:1px solid var(--border);border-left:3px solid;padding:12px 14px;}
+.stat-lbl{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+.stat-val{font-size:22px;font-weight:900;}
+.stat-sub{font-size:11px;color:var(--txt2);margin-top:3px;}
+
+/* Z TABLE */
+.zt{width:100%;border-collapse:collapse;font-size:13px;}
+.zt thead tr{background:#1A1A1A;border-bottom:2px solid var(--orange);}
+.zt th{padding:9px 11px;font-size:10px;letter-spacing:2px;color:var(--orange);text-transform:uppercase;font-weight:700;}
+.zt th.r{text-align:right;}
+.zt td{padding:8px 11px;border-bottom:1px solid #161616;vertical-align:middle;}
+.zt td.r{text-align:right;}
+.zt tfoot td{padding:11px;background:#1A1A1A;border-top:2px solid var(--gold);font-weight:900;color:var(--gold);font-size:14px;}
+.zi{background:#090909;color:var(--txt);border:1px solid #1E1E1E;padding:5px 8px;font-size:13px;font-family:inherit;outline:none;text-align:right;width:110px;transition:border-color .2s;}
+.zi:focus{border-color:var(--orange);}
+
+/* ZONE PASTE Z */
+.paste-zone{background:#0D0D0D;border:1px dashed #2A2A2A;padding:10px 14px;margin-bottom:12px;}
+.paste-zone textarea{width:100%;background:transparent;color:var(--txt2);border:none;font-size:12px;font-family:monospace;outline:none;resize:vertical;min-height:60px;line-height:1.6;}
+.paste-zone textarea::placeholder{color:#383830;}
+
+/* LANCEUR OUTILS */
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px;}
+.tool-card{background:var(--dark);border:1px solid var(--border);padding:14px 16px;display:flex;flex-direction:column;gap:6px;transition:border-color .2s;}
+.tool-card:hover{border-color:var(--orange);}
+.tool-card a{color:var(--bleu);text-decoration:none;font-size:14px;font-weight:700;}
+.tool-card a:hover{color:var(--orange);}
+.tool-desc{font-size:11px;color:var(--txt3);}
+.tool-del{background:none;border:none;color:#444;font-size:11px;cursor:pointer;text-align:left;padding:0;}
+.tool-del:hover{color:#FF5722;}
+.add-tool-form{background:#0D0D0D;border:1px dashed #2A2A2A;padding:14px;margin-top:10px;display:grid;gap:8px;}
+.add-tool-form input{background:#111;color:var(--txt);border:1px solid #2A2A2A;padding:8px 12px;font-size:13px;font-family:inherit;outline:none;}
+.add-tool-form input:focus{border-color:var(--orange);}
+.add-tool-form button{background:var(--orange);color:white;border:none;padding:8px 16px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:1px;}
+
+/* PARAMÈTRES LISTES */
+.param-section{margin-bottom:24px;}
+.param-section h3{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--txt3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.param-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
+.param-item{display:flex;gap:6px;align-items:center;}
+.param-item input{flex:1;background:#0D0D0D;color:var(--txt);border:1px solid #2A2A2A;padding:7px 10px;font-size:13px;font-family:inherit;outline:none;}
+.param-item input:focus{border-color:var(--orange);}
+.param-item button{background:#1A1A1A;border:1px solid #333;color:#888;padding:6px 10px;cursor:pointer;font-size:12px;}
+.param-item button:hover{border-color:#FF5722;color:#FF5722;}
+.add-param-btn{background:#0D0D0D;border:1px dashed #2A2A2A;color:var(--txt3);padding:7px 12px;font-size:12px;cursor:pointer;font-family:inherit;width:100%;text-align:left;}
+.add-param-btn:hover{border-color:var(--vert);color:var(--vert);}
+
+/* AI BILAN */
+.ai-zone{background:#0D0D1A;border:1px solid #2A2A3A;border-left:3px solid var(--violet);padding:14px;margin-top:10px;}
+.ai-zone-title{font-size:10px;letter-spacing:2px;color:var(--violet);text-transform:uppercase;margin-bottom:8px;font-weight:700;}
+.ai-response{font-size:13px;line-height:1.7;color:var(--txt2);white-space:pre-wrap;}
+.ai-loading{color:var(--violet);font-size:12px;font-style:italic;}
+.ai-btn{background:#1A1A2A;border:1px solid var(--violet);color:var(--violet);padding:8px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:1px;margin-top:8px;transition:all .2s;}
+.ai-btn:hover{background:var(--violet);color:white;}
+
+@media(max-width:900px){.week-grid{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:600px){.week-grid{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="sup">COMPLEXE CRUZEL · JOURNAL DE BORD</div>
+    <h1>Semaine <span>en cours</span></h1>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+    <div class="week-nav">
+      <button onclick="changeWeek(-1)">◀</button>
+      <div class="week-label" id="weekLabel">—</div>
+      <button onclick="changeWeek(1)">▶</button>
+    </div>
+    <div id="sync-status" style="font-size:10px;font-weight:700;letter-spacing:1px;color:#888880;">⏳ Chargement...</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('semaine',this)">📅 Semaine</button>
+  <button class="tab-btn" onclick="switchTab('bilan',this)">📊 Bilan S.</button>
+  <button class="tab-btn" onclick="switchTab('z_mois',this)">🧾 Z Mensuel</button>
+  <button class="tab-btn" onclick="switchTab('outils',this)">🔗 Outils</button>
+  <button class="tab-btn" onclick="switchTab('params',this)">⚙️ Paramètres</button>
+  <button class="tab-btn" onclick="switchTab('cession',this)">📈 Cession</button>
+</div>
+
+<div class="content">
+
+  <!-- VUE SEMAINE -->
+  <div id="tab-semaine" class="tab-panel active">
+    <div class="week-grid" id="weekGrid"></div>
+  </div>
+
+  <!-- BILAN SEMAINE -->
+  <div id="tab-bilan" class="tab-panel">
+    <div class="week-stats" id="weekStats"></div>
+    <div id="bilanDetail"></div>
+  </div>
+
+  <!-- Z MENSUEL -->
+  <div id="tab-z_mois" class="tab-panel">
+    <div style="font-size:10px;color:var(--orange);font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">Z DE CAISSE MENSUEL — CHIFFRE OFFICIEL</div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+      <select id="z-sel-mois" onchange="loadZ()" style="background:#111;color:var(--txt);border:1px solid #333;padding:7px 12px;font-size:13px;font-family:inherit;outline:none;cursor:pointer;">
+        <option value="">— Mois —</option>
+        <option>Janvier</option><option>Février</option><option>Mars</option>
+        <option>Avril</option><option>Mai</option><option>Juin</option>
+        <option>Juillet</option><option>Août</option><option>Septembre</option>
+        <option>Octobre</option><option>Novembre</option><option>Décembre</option>
+      </select>
+      <select id="z-sel-annee" onchange="loadZ()" style="background:#111;color:var(--txt);border:1px solid #333;padding:7px 12px;font-size:13px;font-family:inherit;outline:none;cursor:pointer;">
+        <option>2023</option><option>2024</option><option>2025</option><option selected>2026</option><option>2027</option>
+      </select>
+      <button onclick="saveZ()" style="background:var(--orange);color:white;border:none;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:1px;">💾 ENREGISTRER</button>
+      <span id="z-msg" style="font-size:11px;color:#4CAF50;display:none;">✓ Sauvegardé</span>
+    </div>
+
+    <!-- ZONE COPIER-COLLER -->
+    <div class="paste-zone" style="margin-bottom:14px;">
+      <div style="font-size:10px;color:var(--gold);font-weight:700;letter-spacing:2px;margin-bottom:8px;">📋 IMPORT DEPUIS EXCEL/SHEETS — Colle tes données ici</div>
+      <div style="font-size:11px;color:var(--txt3);margin-bottom:6px;">Format attendu : <span style="color:var(--txt2);font-family:monospace;">RESTAURANT&nbsp;&nbsp;&nbsp;142&nbsp;&nbsp;&nbsp;2840.50</span> (nom + qté + CA, séparés par tab ou espace)</div>
+      <textarea id="z-paste" placeholder="Colle ici depuis Excel ou Sheets puis clique Importer..."></textarea>
+      <button onclick="importZPaste()" style="background:#1A1A0A;border:1px solid var(--gold);color:var(--gold);padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;">⬆ IMPORTER</button>
+      <span id="z-import-msg" style="font-size:11px;color:#4CAF50;display:none;margin-left:10px;"></span>
+    </div>
+
+    <div style="overflow-x:auto;margin-bottom:14px;">
+      <table class="zt">
+        <thead><tr>
+          <th style="text-align:left;width:42%">ACTIVITÉ</th>
+          <th class="r">QTÉ</th><th class="r">CA TTC (€)</th><th class="r">PANIER MOY.</th>
+        </tr></thead>
+        <tbody id="z-tbody"></tbody>
+        <tfoot><tr>
+          <td style="font-size:12px;letter-spacing:1px;text-transform:uppercase">TOTAL CA BRUT <span style="font-size:9px;color:#888;font-weight:400;">(hors taxe de séjour)</span></td>
+          <td class="r" id="z-tot-qty">—</td>
+          <td class="r" id="z-tot-ca">—</td>
+          <td class="r" id="z-tot-pm" style="color:var(--txt2)">—</td>
+        </tr></tfoot>
+      </table>
+    </div>
+    <div style="background:var(--card);border-top:3px solid var(--gold);border:1px solid var(--border);padding:14px 16px;">
+      <div style="font-size:10px;color:var(--gold);font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;">HISTORIQUE</div>
+      <div id="z-hist"></div>
+    </div>
+  </div>
+
+  <!-- OUTILS -->
+  <div id="tab-outils" class="tab-panel">
+    <div style="font-size:10px;color:var(--orange);font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">🔗 LANCEUR D'OUTILS — Accès rapide</div>
+    <div class="tools-grid" id="toolsGrid"></div>
+    <div class="add-tool-form" id="addToolForm">
+      <div style="font-size:10px;color:var(--txt3);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">+ Ajouter un outil</div>
+      <input type="text" id="tool-name" placeholder="Nom de l'outil (ex: Planning Cantal Trip)">
+      <input type="url" id="tool-url" placeholder="URL (ex: https://...)">
+      <input type="text" id="tool-desc" placeholder="Description courte (optionnel)">
+      <button onclick="addTool()">+ AJOUTER</button>
+    </div>
+  </div>
+
+  <!-- PARAMÈTRES -->
+  <div id="tab-params" class="tab-panel">
+    <div style="font-size:10px;color:var(--orange);font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">⚙️ PERSONNALISATION DES LISTES</div>
+    <div id="paramsContent"></div>
+  </div>
+
+
+  <!-- CESSION -->
+  <div id="tab-cession" class="tab-panel">
+    <div id="cessionContent"></div>
+  </div>
+
+</div>
+
+<!-- MODAL JOUR -->
+<div class="modal-overlay hidden" id="modal" onclick="closeModalOut(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">Lundi</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX PHOTO -->
+<div class="modal-overlay hidden" id="lightbox" onclick="closeLightbox()" style="align-items:center;justify-content:center;">
+  <img id="lightboxImg" src="" style="max-width:92vw;max-height:88vh;border:2px solid var(--orange);object-fit:contain;">
+</div>
+
+<script>
+// ── CONSTANTES ────────────────────────────────────────────────────────────────
+const JOURS = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+const JOURS_FULL = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
+const MOIS_FR = ["Janv","Févr","Mars","Avr","Mai","Juin","Juil","Août","Sept","Oct","Nov","Déc"];
+
+// Listes par défaut — éditables dans Paramètres
+const DEFAULT_LISTS = {
+  sport_type: ["Rowing","Judo","Gym / Muscu","Enduro / Moto","Maxi Trail","Marche","Mixte"],
+  ct_axe: ["SEO / Google Business","Instagram / RS","Site cantal-trip.fr","B2B partenaires","Newsletter","Contenu éditorial","Roadbook / Itinéraire","Autre"],
+  maintenance_zone: ["Cuisine","Salle","Hébergement","Gîtes","Bâtiment","Véhicule / Moto","Équipement sportif","Informatique","Autre"],
+  asso_projet: ["Riders Tripoux Never Rust","Jorn del Tripoux","Road Tripoux","Mob Tour","We Can Tripoux","Raid Maroc 2026","Autre"],
+  heberg_type: ["Hôtel chambre","Hôtel demi-pension","Hôtel pension complète","Gîte Domaine (14p)","Gîte Bergerie","Gîte Grenier","Autre"],
+};
+
+function getLists(){ return data._lists || DEFAULT_LISTS; }
+function getList(key){ return getLists()[key] || DEFAULT_LISTS[key] || []; }
+
+const BLOCS_RAPIDES = [
+  { id:"cuisine", icon:"🍳", label:"Cuisine / Service", color:"#E8C40A",
+    fields:[
+      {id:"statut",           label:"Statut", type:"status"},
+      {id:"sep_midi",         label:"SERVICE MIDI", type:"sep"},
+      {id:"menu_jour",        label:"Menu du jour", type:"area", ph:"Entrée — Plat — Garnitures — Dessert…"},
+      {id:"cv_menu_midi",     label:"Couverts Menu midi (16,50€)", type:"number", ph:"30"},
+      {id:"cv_carte_midi",    label:"Couverts Carte midi (22€)", type:"number", ph:"5"},
+      {id:"sep_soir",         label:"SERVICE SOIR", type:"sep"},
+      {id:"cv_menu_soir",     label:"Couverts Menu soir (16,50€)", type:"number", ph:"10"},
+      {id:"cv_carte_soir",    label:"Couverts Carte soir (22€)", type:"number", ph:"4"},
+      {id:"sep_gastro",       label:"SERVICE GASTRO (Dimanche)", type:"sep"},
+      {id:"menu_gastro",      label:"Menu Gastro", type:"area", ph:"Mise en bouche — Entrée — Plat & garniture — Plateau fromage — Dessert chef…"},
+      {id:"cv_gastro",        label:"Couverts Gastro (39€)", type:"number", ph:"20"},
+      {id:"sep_emport",       label:"À EMPORTER — 14€", type:"sep"},
+      {id:"emport_midi",      label:"À emporter midi", type:"number", ph:"3"},
+      {id:"emport_soir",      label:"À emporter soir", type:"number", ph:"2"},
+      {id:"emport_detail",    label:"Détail", type:"text", ph:"Tripoux × 4, desserts × 2…"},
+      {id:"sep_bilan",        label:"BILAN JOURNÉE", type:"sep"},
+      {id:"_row_bilan",       label:"", type:"row_bilan"},
+      {id:"remarque",         label:"Remarque de production ou service", type:"area", ph:"Lave-vaisselle, retour client, incident…"},
+      {id:"energie",          label:"Énergie cuisine", type:"stars"},
+    ]},
+  { id:"hebergement", icon:"🏨", label:"Hébergement / Gîtes", color:"#26C6DA",
+    fields:[
+      {id:"statut",      label:"Statut", type:"status"},
+      {id:"type_heberg", label:"Type", type:"select", listKey:"heberg_type"},
+      {id:"couchages",   label:"Couchages loués", type:"number", ph:"8"},
+      {id:"remarque",    label:"Remarque", type:"text", ph:"Arrivée 14h, départ 11h, demande spéciale…"},
+    ]},
+  { id:"sport", icon:"⚡", label:"Sport 16h–17h30", color:"#4CAF50", badge:"INTOUCHABLE",
+    fields:[
+      {id:"statut",    label:"Statut séance", type:"status"},
+      {id:"type",      label:"Type", type:"select", listKey:"sport_type"},
+      {id:"duree",     label:"Durée", type:"text", ph:"1h10"},
+      {id:"contenu",   label:"Contenu + données Zepp", type:"area", ph:"6×500m R20 · FC 142 · 487 cal…"},
+      {id:"ressenti",  label:"Ressenti physique", type:"area", ph:"Genoux OK, épaule gauche légère tension…"},
+      {id:"intensite", label:"Intensité", type:"stars"},
+    ],
+    hasAI: true, aiType:"sport"},
+  { id:"ct", icon:"🗺️", label:"Bureau CT 20h30–22h", color:"#FF6B35",
+    fields:[
+      {id:"statut",  label:"Statut axe CT", type:"status"},
+      {id:"axe",     label:"Axe travaillé", type:"select", listKey:"ct_axe"},
+      {id:"realise", label:"Ce qui a été fait", type:"area", ph:"4 photos GMB, description réécrite…"},
+      {id:"livrable",label:"Livrable", type:"text", ph:"Post IG draft, fiche GMB v2…"},
+      {id:"temps",   label:"Temps passé", type:"text", ph:"1h15"},
+      {id:"_timer",  label:"⏱ Chrono / Compteur", type:"timer"},
+      {id:"energie", label:"Concentration", type:"stars"},
+    ]},
+  { id:"maintenance", icon:"🔧", label:"Entretien / Maintenance", color:"#78909C",
+    fields:[
+      {id:"statut",      label:"Statut", type:"status"},
+      {id:"zone",        label:"Zone concernée", type:"select", listKey:"maintenance_zone"},
+      {id:"description", label:"Description", type:"area", ph:"Lave-vaisselle HS, fuite évier chambre 3…"},
+      {id:"action",      label:"Action réalisée / à faire", type:"text", ph:"Appelé réparateur, commandé pièce…"},
+      {id:"deadline",    label:"Date limite de réalisation", type:"date"},
+      {id:"cout",        label:"Coût estimé (€)", type:"number", ph:"150"},
+      {id:"_timer",      label:"⏱ Chrono / Temps passé", type:"timer"},
+      {id:"urgence",     label:"Urgence", type:"stars"},
+    ]},
+  { id:"commer", icon:"🤝", label:"Commercialisation", color:"#2563EB",
+    fields:[
+      {id:"statut",  label:"Statut", type:"status"},
+      {id:"contact", label:"Contact / Structure", type:"text", ph:"Moto Club Aurillac…"},
+      {id:"objet",   label:"Objet", type:"text", ph:"Devis stage moto 6p…"},
+      {id:"action",  label:"Prochaine action", type:"text", ph:"Relancer J+7…"},
+      {id:"montant", label:"Montant (€)", type:"number", ph:"1 200"},
+      {id:"_timer",  label:"⏱ Chrono / Temps passé", type:"timer"},
+    ]},
+  { id:"asso", icon:"🏅", label:"Asso / Événements", color:"#DB2777",
+    fields:[
+      {id:"statut",  label:"Statut", type:"status"},
+      {id:"projet",  label:"Projet", type:"select", listKey:"asso_projet"},
+      {id:"action",  label:"Action réalisée", type:"area", ph:"Réunion bénévoles, inscriptions…"},
+      {id:"suite",   label:"Prochaine étape", type:"text", ph:"Valider programme J-30…"},
+      {id:"_timer",  label:"⏱ Chrono / Temps passé", type:"timer"},
+    ]},
+  { id:"bilan", icon:"📋", label:"Bilan du jour", color:"#7C3AED",
+    fields:[
+      {id:"energie_g", label:"Énergie globale", type:"stars"},
+      {id:"charge",    label:"Charge mentale", type:"stars"},
+      {id:"marquant",  label:"Mon bilan — fait marquant", type:"area", ph:"Table riders satisfaits, belle séance judo, axe CT avancé…"},
+      {id:"demain",    label:"Priorité demain", type:"text", ph:"Relancer B2B, préparer séance rowing…"},
+    ],
+    hasAI: true, aiType:"bilan"},
+];
+
+const Z_LIGNES = [
+  {id:"taxe_sejour",   label:"TAXE DE SÉJOUR",   color:"#777"},
+  {id:"bar20",         label:"BAR 20%",           color:"#E8C40A"},
+  {id:"cave",          label:"CAVE",              color:"#E8C40A"},
+  {id:"dojo",          label:"DOJO",              color:"#2563EB"},
+  {id:"bar10",         label:"BAR 10%",           color:"#E8C40A"},
+  {id:"hotel",         label:"HÔTEL",             color:"#FF6B35"},
+  {id:"location_gite", label:"LOCATION GÎTE",     color:"#4CAF50"},
+  {id:"pension",       label:"PENSION",           color:"#FF6B35"},
+  {id:"petit_dej",     label:"PETIT DÉJ",         color:"#E8C40A"},
+  {id:"restaurant",    label:"RESTAURANT",        color:"#E8440A"},
+  {id:"soiree_etape",  label:"SOIRÉE ÉTAPE",      color:"#FF6B35"},
+  {id:"a_emporter",    label:"À EMPORTER",        color:"#E8440A"},
+  {id:"boutique",      label:"BOUTIQUE",          color:"#DB2777"},
+  {id:"tripoux",       label:"TRIPOUX DE MAURS",  color:"#E8440A"},
+];
+
+// ── GITHUB SYNC ───────────────────────────────────────────────────────────────
+const GH_TOKEN  = "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";
+const GH_OWNER  = "jeanhenricruzel-ai";
+const GH_REPO   = "journal-cruzel";
+const GH_FILE   = "data.json";
+const GH_API    = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
+const SK        = "journal_cruzel_v4";
+let data = {};
+let _ghSha = null; // SHA requis pour les mises à jour GitHub
+
+function ghHeaders(){
+  return {
+    "Authorization": `token ${GH_TOKEN}`,
+    "Accept": "application/vnd.github+json",
+    "Content-Type": "application/json"
+  };
+}
+
+function showSync(msg, color="#888880"){
+  const el = document.getElementById("sync-status");
+  if(el){ el.textContent = msg; el.style.color = color; }
+}
+
+async function loadFromSheets(){
+  showSync("⏳ Chargement GitHub...", "#F5C842");
+  // Charger localStorage en premier (affichage immédiat)
+  try { const r = localStorage.getItem(SK); if(r) data = JSON.parse(r); } catch(e){}
+  // Migration v7
+  try {
+    let changed = false;
+    Object.keys(data).forEach(dateKey => {
+      const d = data[dateKey];
+      if(d && d.cuisine) {
+        const c = d.cuisine;
+        if(c.cv_menu !== undefined && c.cv_menu_midi === undefined) { c.cv_menu_midi = c.cv_menu; delete c.cv_menu; changed = true; }
+        if(c.cv_carte !== undefined && c.cv_carte_midi === undefined) { c.cv_carte_midi = c.cv_carte; delete c.cv_carte; changed = true; }
+      }
+    });
+    if(changed) { try { localStorage.setItem(SK, JSON.stringify(data)); } catch(e){} }
+  } catch(e){}
+  // Charger depuis GitHub
+  try {
+    const res = await fetch(GH_API + "?t=" + Date.now(), { headers: ghHeaders() });
+    if(res.ok){
+      const json = await res.json();
+      _ghSha = json.sha;
+      const decoded = JSON.parse(atob(json.content.replace(/\n/g,"")));
+      if(Object.keys(decoded).length > 0){
+        data = decoded;
+        try { localStorage.setItem(SK, JSON.stringify(data)); } catch(e){}
+      }
+      showSync("✓ GitHub synchronisé", "#5DD87A");
+    } else if(res.status === 404){
+      // Fichier pas encore créé sur GitHub — on part de localStorage
+      showSync("✓ Local (premier démarrage)", "#F5C842");
+    } else {
+      showSync("⚠ GitHub erreur " + res.status, "#FF5722");
+    }
+  } catch(e){
+    showSync("✓ Local uniquement", "#F5C842");
+  }
+  renderWeek();
+  loadZ();
+  renderTools();
+}
+
+async function save(){
+  try { localStorage.setItem(SK, JSON.stringify(data)); } catch(e){}
+  showSync("⏫ Enregistrement GitHub...", "#F5C842");
+  try {
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+    const body = {
+      message: "Journal update " + new Date().toISOString().slice(0,16).replace("T"," "),
+      content: content,
+      branch: "main"
+    };
+    if(_ghSha) body.sha = _ghSha;
+    const res = await fetch(GH_API, {
+      method: "PUT",
+      headers: ghHeaders(),
+      body: JSON.stringify(body)
+    });
+    const json = await res.json();
+    if(res.ok){
+      _ghSha = json.content?.sha || _ghSha;
+      showSync("✓ GitHub " + new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}), "#5DD87A");
+    } else {
+      showSync("⚠ Sync GitHub échoué — local OK", "#F5C842");
+      console.error("GitHub save error:", json.message);
+    }
+  } catch(e){
+    showSync("✓ Local OK — " + new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}), "#5DD87A");
+  }
+}
+
+// ── SEMAINE ───────────────────────────────────────────────────────────────────
+let weekOffset = 0;
+
+function getWeekDates(offset=0){
+  const now = new Date();
+  const day = now.getDay();
+  const mondayDiff = day===0 ? -6 : 1-day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayDiff + offset*7);
+  return Array.from({length:7},(_,i)=>{
+    const d = new Date(monday);
+    d.setDate(monday.getDate()+i);
+    return d;
+  });
+}
+
+function dateKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function isToday(d){ const t=new Date(); return d.getDate()===t.getDate()&&d.getMonth()===t.getMonth()&&d.getFullYear()===t.getFullYear(); }
+function changeWeek(dir){ weekOffset+=dir; renderWeek(); }
+
+function renderWeek(){
+  const dates = getWeekDates(weekOffset);
+  const d0=dates[0], d6=dates[6];
+  document.getElementById("weekLabel").textContent =
+    `${d0.getDate()} ${MOIS_FR[d0.getMonth()]} → ${d6.getDate()} ${MOIS_FR[d6.getMonth()]} ${d6.getFullYear()}`;
+
+  const grid = document.getElementById("weekGrid");
+  grid.innerHTML = "";
+  dates.forEach((d,i)=>{
+    const key = dateKey(d);
+    const dayData = data[key] || {};
+    const isWE = i>=5;
+    const col = document.createElement("div");
+    col.className = `day-col${isToday(d)?" today":""}${isWE?" weekend":""}`;
+
+    const head = document.createElement("div");
+    head.className = "day-head";
+    head.onclick = ()=>openModal(d);
+    head.innerHTML = `<div class="day-name">${JOURS[i]}</div><div class="day-date">${d.getDate()}</div>`;
+    col.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "day-body";
+    BLOCS_RAPIDES.forEach(b=>{
+      const bd = dayData[b.id]||{};
+      const statut = bd.statut || "";
+      const hasData = Object.values(bd).some(v=>v&&v!==0&&v!=="");
+      const statusClass = statut==="done"?"status-done":statut==="planned"?"status-planned":statut==="blocked"?"status-blocked":"status-empty";
+
+      let valTxt = "";
+      if(b.id==="cuisine"){
+        const cv=(parseInt(bd.cv_menu_midi)||0)+(parseInt(bd.cv_menu_soir)||0)+(parseInt(bd.cv_carte_midi)||0)+(parseInt(bd.cv_carte_soir)||0)+(parseInt(bd.cv_gastro)||0)+(parseInt(bd.emport_midi)||0)+(parseInt(bd.emport_soir)||0);
+        const ca=bd.ca?Number(bd.ca).toLocaleString("fr")+" €":"";
+        const menuJ=bd.menu_jour?bd.menu_jour.slice(0,20)+(bd.menu_jour.length>20?"…":""):"";
+        valTxt = cv>0&&ca?`${cv}cv · ${ca}`:cv>0?`${cv} couverts`:menuJ||ca||"—";
+      } else if(b.id==="sport"){
+        valTxt = bd.type||(bd.statut==="done"?"Fait":bd.statut==="planned"?"Prévu":"—");
+      } else if(b.id==="ct"){
+        valTxt = bd.axe?bd.axe.replace("Cantal Trip — ",""):(bd.statut==="done"?"Fait":bd.statut==="planned"?"Prévu":"—");
+      } else if(b.id==="maintenance"){
+        valTxt = bd.description?bd.description.slice(0,22)+"…":(bd.statut==="done"?"Traité":bd.statut==="planned"?"Prévu":bd.statut==="blocked"?"⚠ Urgent":"—");
+      } else if(b.id==="commer"){
+        valTxt = bd.contact||(hasData?"En cours":"—");
+      } else if(b.id==="asso"){
+        valTxt = bd.projet||(hasData?"En cours":"—");
+      } else if(b.id==="hebergement"){
+        const couch = bd.couchages||0;
+        valTxt = bd.type_heberg?(couch?`${bd.type_heberg.split(" ")[0]} · ${couch}ch`:bd.type_heberg.split(" ")[0]):(couch?`${couch} couchages`:hasData?"Actif":"—");
+      } else if(b.id==="bilan"){
+        const eg=parseInt(bd.energie_g)||0;
+        valTxt = eg>0?"★".repeat(eg)+"☆".repeat(5-eg):(bd.marquant?bd.marquant.slice(0,18)+"…":"—");
+      }
+
+      const qb = document.createElement("div");
+      qb.className = "quick-bloc";
+      qb.onclick=(e)=>{e.stopPropagation();openModal(d,b.id);};
+      qb.innerHTML = `
+        <span class="qb-icon">${b.icon}</span>
+        <div class="qb-content">
+          <div class="qb-label">${b.label.split(" ")[0].replace("/","")}</div>
+          <div class="qb-val" style="color:${hasData?b.color:"var(--txt3)"}">${valTxt}</div>
+        </div>
+        <div class="qb-status ${statusClass}"></div>`;
+      body.appendChild(qb);
+    });
+    col.appendChild(body);
+
+    const photos = (dayData._photos||[]);
+    const photoArea = document.createElement("div");
+    photoArea.className = "day-photos";
+    photos.slice(0,4).forEach((src,pi)=>{
+      const img = document.createElement("img");
+      img.className="photo-thumb"; img.src=src;
+      img.onclick=(e)=>{e.stopPropagation();openLightbox(src);};
+      photoArea.appendChild(img);
+    });
+    if(photos.length<8){
+      const add=document.createElement("div");
+      add.className="add-photo"; add.textContent="📷";
+      add.onclick=(e)=>{e.stopPropagation();openModal(d,"_photos");};
+      photoArea.appendChild(add);
+    }
+    col.appendChild(photoArea);
+    grid.appendChild(col);
+  });
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+let currentDate = null;
+
+function openModal(d, focusBloc=null){
+  currentDate = d;
+  const key = dateKey(d);
+  const dayData = data[key]||{};
+  const idx = getWeekDates(weekOffset).findIndex(x=>dateKey(x)===key);
+  const dayName = JOURS_FULL[idx>=0?idx:0];
+
+  document.getElementById("modalTitle").textContent = `${dayName} ${d.getDate()} ${MOIS_FR[d.getMonth()]}`;
+  const body = document.getElementById("modalBody");
+  body.innerHTML = "";
+
+  BLOCS_RAPIDES.forEach(b=>{
+    const bd = dayData[b.id]||{};
+    const sec = document.createElement("div");
+    sec.className = "modal-section";
+    sec.id = "ms-"+b.id;
+    const badge = b.badge?`<span style="margin-left:6px;font-size:9px;padding:2px 6px;background:${b.color}22;color:${b.color}">${b.badge}</span>`:"";
+    sec.innerHTML = `<div class="modal-section-title" style="color:${b.color}">${b.icon} ${b.label}${badge}</div>`;
+
+    b.fields.forEach(f=>{
+      const val = bd[f.id]||"";
+      const bc = val&&val!==0?`border-color:${b.color}44`:"";
+      const div = document.createElement("div");
+      div.className = "fg";
+
+      if(f.type==="sep"){
+        div.innerHTML=`<div style="font-size:9px;font-weight:800;letter-spacing:2px;color:${b.color};opacity:.6;padding:10px 0 4px;border-top:1px solid #1E1E1E;margin-top:4px;">${f.label}</div>`;
+      } else if(f.type==="status"){
+        const s = bd.statut||"";
+        div.innerHTML = `<label>${f.label}</label><div class="status-btns">
+          <button class="status-btn ${s==='done'?'active-done':''}" onclick="setDayVal('${key}','${b.id}','statut','done')">✓ Fait</button>
+          <button class="status-btn ${s==='planned'?'active-planned':''}" onclick="setDayVal('${key}','${b.id}','statut','planned')">📌 Prévu</button>
+          <button class="status-btn ${s==='blocked'?'active-blocked':''}" onclick="setDayVal('${key}','${b.id}','statut','blocked')">⚠ Bloqué</button>
+          <button class="status-btn ${s===''?'active-planned':''}" onclick="setDayVal('${key}','${b.id}','statut','')">— Vide</button>
+        </div>`;
+      } else if(f.type==="stars"){
+        const n=parseInt(val)||0;
+        const ss=[1,2,3,4,5].map(i=>`<span class="star ${i<=n?"on":""}" id="ms-${key}-${b.id}-${f.id}-${i}" style="color:${i<=n?b.color:"#222"}"
+          onclick="modalStar('${key}','${b.id}','${f.id}',${i},'${b.color}')">★</span>`).join("");
+        div.innerHTML=`<label>${f.label}</label><div class="stars">${ss}<span id="msv-${key}-${b.id}-${f.id}" style="font-size:11px;color:#555;margin-left:5px">${n?n+"/5":""}</span></div>`;
+      } else if(f.type==="select"){
+        const opts = getList(f.listKey||"").map(o=>`<option value="${o}"${val===o?" selected":""}>${o}</option>`).join("");
+        div.innerHTML=`<label>${f.label}</label><select style="${bc}" onchange="setDayVal('${key}','${b.id}','${f.id}',this.value)"><option value="">— Choisir —</option>${opts}</select>`;
+      } else if(f.type==="area"){
+        div.innerHTML=`<label>${f.label}</label><textarea rows="3" placeholder="${f.ph||""}" style="${bc}" oninput="setDayVal('${key}','${b.id}','${f.id}',this.value)">${esc(val)}</textarea>`;
+      } else if(f.type==="number"){
+        div.innerHTML=`<label>${f.label}</label><input type="number" value="${val}" placeholder="${f.ph||""}" style="${bc}" oninput="setDayVal('${key}','${b.id}','${f.id}',this.value)">`;
+      } else if(f.type==="date"){
+        div.innerHTML=`<label>${f.label}</label><input type="date" value="${val}" style="${bc};width:180px;" onchange="setDayVal('${key}','${b.id}','${f.id}',this.value)">`;
+      } else if(f.type==="timer"){
+        div.innerHTML=`<label style="color:${b.color};font-weight:700;">${f.label}</label>${renderTimer(key, b.id, b.color)}`;
+      } else if(f.type==="row_bilan"){
+        // Stats détaillées + CA + Chambres
+        const cvMenuMidi   = parseInt(bd.cv_menu_midi)||0;
+        const cvMenuSoir   = parseInt(bd.cv_menu_soir)||0;
+        const cvCarteMidi  = parseInt(bd.cv_carte_midi)||0;
+        const cvCarteSoir  = parseInt(bd.cv_carte_soir)||0;
+        const cvGastro     = parseInt(bd.cv_gastro)||0;
+        const cvEmportMidi = parseInt(bd.emport_midi)||0;
+        const cvEmportSoir = parseInt(bd.emport_soir)||0;
+        const totalMenu    = cvMenuMidi + cvMenuSoir;
+        const totalCarte   = cvCarteMidi + cvCarteSoir;
+        const totalEmport  = cvEmportMidi + cvEmportSoir;
+        const totalRepas   = totalMenu + totalCarte + cvGastro + totalEmport;
+        const PRIX_MENU=16.5, PRIX_CARTE=22, PRIX_GASTRO=39, PRIX_EMPORT=14;
+        const caEstime = Math.round(totalMenu*PRIX_MENU + totalCarte*PRIX_CARTE + cvGastro*PRIX_GASTRO + totalEmport*PRIX_EMPORT);
+        const hebData = (data[key]?.hebergement)||{};
+        const statStyle = "background:#0D0D0D;border:1px solid #1E1E1E;padding:10px;text-align:center;";
+        const statLbl = "font-size:9px;color:#606058;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;";
+        const statVal = (v,c)=>`<div style="font-size:20px;font-weight:900;color:${c};">${v||"—"}</div>`;
+        div.innerHTML=`
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px;">
+            <div style="${statStyle}">
+              <div style="${statLbl}">Menu midi 16,50€</div>
+              ${statVal(cvMenuMidi||"—","#F5C842")}
+              <div style="font-size:9px;color:#555;margin-top:2px;">${cvMenuMidi?Math.round(cvMenuMidi*PRIX_MENU)+"€ est.":""}</div>
+            </div>
+            <div style="${statStyle}">
+              <div style="${statLbl}">Menu soir 16,50€</div>
+              ${statVal(cvMenuSoir||"—","#F5C842")}
+              <div style="font-size:9px;color:#555;margin-top:2px;">${cvMenuSoir?Math.round(cvMenuSoir*PRIX_MENU)+"€ est.":""}</div>
+            </div>
+            <div style="${statStyle}border-top:2px solid #A97FFF;">
+              <div style="${statLbl}">Gastro 39€</div>
+              ${statVal(cvGastro||"—","#A97FFF")}
+              <div style="font-size:9px;color:#555;margin-top:2px;">${cvGastro?Math.round(cvGastro*PRIX_GASTRO)+"€ est.":""}</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;">
+            <div style="${statStyle}">
+              <div style="${statLbl}">Carte midi 22€</div>
+              ${statVal(cvCarteMidi||"—","#5FA8F5")}
+              <div style="font-size:9px;color:#555;margin-top:2px;">${cvCarteMidi?Math.round(cvCarteMidi*PRIX_CARTE)+"€ est.":""}</div>
+            </div>
+            <div style="${statStyle}">
+              <div style="${statLbl}">Carte soir 22€</div>
+              ${statVal(cvCarteSoir||"—","#5FA8F5")}
+              <div style="font-size:9px;color:#555;margin-top:2px;">${cvCarteSoir?Math.round(cvCarteSoir*PRIX_CARTE)+"€ est.":""}</div>
+            </div>
+            <div style="${statStyle}">
+              <div style="${statLbl}">Emporter 14€</div>
+              ${statVal(totalEmport||"—","#5DD87A")}
+              <div style="font-size:9px;color:#555;margin-top:2px;">${cvEmportMidi?cvEmportMidi+"m":""}${cvEmportMidi&&cvEmportSoir?"+":""}${cvEmportSoir?cvEmportSoir+"s":""}</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div style="background:#1A1500;border:1px solid #3A3000;padding:10px;text-align:center;">
+              <div style="${statLbl}">Total repas vendus</div>
+              <div style="font-size:26px;font-weight:900;color:#E8C40A;">${totalRepas||"—"}</div>
+            </div>
+            <div style="background:#0D1A0D;border:1px solid #1A3A1A;padding:10px;text-align:center;">
+              <div style="${statLbl}">CA estimé</div>
+              <div style="font-size:26px;font-weight:900;color:#5DD87A;">${caEstime?caEstime.toLocaleString("fr")+" €":"—"}</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;">
+          <div><label>CA JOURNÉE (€)</label>
+            <input type="number" value="${bd.ca||""}" placeholder="1 240" style="width:100%;background:#0D0D0D;color:#E8E8E0;border:1px solid ${bd.ca?"#E8C40A44":"#2A2A2A"};padding:9px 12px;font-size:18px;font-weight:700;font-family:inherit;outline:none;" oninput="setDayVal('${key}','cuisine','ca',this.value)">
+          </div>
+          <div><label>CHAMBRES LOUÉES</label>
+            <input type="number" value="${hebData.couchages||""}" placeholder="ch." style="width:100%;background:#0D0D0D;color:#26C6DA;border:1px solid ${hebData.couchages?"#26C6DA44":"#2A2A2A"};padding:9px 12px;font-size:18px;font-weight:700;font-family:inherit;outline:none;" oninput="setDayVal('${key}','hebergement','couchages',this.value)">
+          </div>
+          </div>`;
+      } else {
+        div.innerHTML=`<label>${f.label}</label><input type="text" value="${esc(val)}" placeholder="${f.ph||""}" style="${bc}" oninput="setDayVal('${key}','${b.id}','${f.id}',this.value)">`;
+      }
+      sec.appendChild(div);
+    });
+
+    // Zone liens hypertexte pour chaque bloc
+    const links = bd._links || [];
+    const linkDiv = document.createElement("div");
+    linkDiv.className = "fg";
+    linkDiv.id = `links-${key}-${b.id}`;
+    linkDiv.innerHTML = `<label>🔗 Liens — travaux réalisés</label>`;
+    const linksArea = document.createElement("div");
+    linksArea.className = "links-area";
+    linksArea.id = `linksarea-${key}-${b.id}`;
+    renderLinksArea(key, b.id, links, linksArea, b.color);
+    linkDiv.appendChild(linksArea);
+    const addBtn = document.createElement("button");
+    addBtn.className = "add-link-btn";
+    addBtn.textContent = "+ Ajouter un lien";
+    addBtn.onclick = ()=>addLink(key, b.id, b.color);
+    linkDiv.appendChild(addBtn);
+    sec.appendChild(linkDiv);
+
+    // Bouton IA pour sport et bilan
+    if(b.hasAI){
+      const aiDiv = document.createElement("div");
+      aiDiv.className = "ai-zone";
+      aiDiv.id = `ai-${key}-${b.id}`;
+      aiDiv.innerHTML = `<div class="ai-zone-title">🤖 Analyse IA</div>
+        <div class="ai-response" id="ai-resp-${key}-${b.id}">${bd._ai_analysis || '<span style="color:#444;font-style:italic">Pas encore analysé.</span>'}</div>
+        <button class="ai-btn" onclick="runAI('${key}','${b.id}','${b.aiType}')">⚡ ${b.aiType==='sport'?'Analyser la séance':'Générer le bilan IA'}</button>`;
+      if(b.aiType==='sport'){
+        const uploadDiv = document.createElement("div");
+        uploadDiv.innerHTML = `<div style="margin-top:10px;"><label style="font-size:10px;color:var(--txt3);letter-spacing:1px;display:block;margin-bottom:6px;">📎 PHOTO SÉANCE / FICHE ZEPP</label>
+          <input type="file" accept="image/*" multiple id="zepp-input-${key}" style="font-size:12px;color:var(--txt2);" onchange="handleZeppPhotos(event,'${key}')">
+          <div id="zepp-thumbs-${key}" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${(bd._zepp_photos||[]).map((s,i)=>`<div style="position:relative"><img src="${s}" style="width:70px;height:70px;object-fit:cover;border:1px solid #2A2A2A;"><button onclick="delZeppPhoto('${key}',${i})" style="position:absolute;top:1px;right:1px;background:rgba(0,0,0,.8);color:white;border:none;font-size:9px;cursor:pointer;padding:2px 4px;">✕</button></div>`).join('')}</div></div>`;
+        aiDiv.appendChild(uploadDiv);
+      }
+      sec.appendChild(aiDiv);
+    }
+
+    body.appendChild(sec);
+  });
+
+  // SECTION PHOTOS
+  const photoSec = document.createElement("div");
+  photoSec.className = "modal-section";
+  photoSec.id = "ms-_photos";
+  photoSec.innerHTML = `<div class="modal-section-title" style="color:var(--violet)">📷 Photos — Séance · Plats · Avant/Après</div>`;
+  const pg = document.createElement("div");
+  pg.className="photo-grid"; pg.id="photoGrid-"+key;
+  refreshPhotoGrid(key, pg, dayData._photos||[]);
+  photoSec.appendChild(pg);
+  const inp = document.createElement("input");
+  inp.type="file"; inp.accept="image/*"; inp.multiple=true; inp.style.display="none";
+  inp.id="photoInput-"+key;
+  inp.onchange=(e)=>handlePhotos(e,key);
+  photoSec.appendChild(inp);
+  body.appendChild(photoSec);
+
+  document.getElementById("modal").classList.remove("hidden");
+  if(focusBloc){
+    setTimeout(()=>{
+      const el=document.getElementById("ms-"+focusBloc);
+      if(el)el.scrollIntoView({behavior:"smooth",block:"center"});
+    },100);
+  }
+}
+
+// ── LIENS PAR BLOC ────────────────────────────────────────────────────────────
+function renderLinksArea(key, blocId, links, container, color){
+  container.innerHTML = "";
+  links.forEach((lnk,i)=>{
+    const row = document.createElement("div");
+    row.className = "link-row";
+    row.innerHTML = `
+      <input type="text" value="${esc(lnk.label||"")}" placeholder="Nom du lien" style="border-color:${lnk.url?color+'44':'#2A2A2A'}" oninput="updateLink('${key}','${blocId}',${i},'label',this.value)">
+      <input type="url" value="${esc(lnk.url||"")}" placeholder="https://..." style="border-color:${lnk.url?color+'44':'#2A2A2A'}" oninput="updateLink('${key}','${blocId}',${i},'url',this.value)">
+      ${lnk.url?`<a href="${lnk.url}" target="_blank" title="Ouvrir">🔗</a>`:'<span style="width:26px"></span>'}
+      <button onclick="removeLink('${key}','${blocId}',${i})">✕</button>`;
+    container.appendChild(row);
+  });
+}
+
+function addLink(key, blocId, color){
+  if(!data[key])data[key]={};
+  if(!data[key][blocId])data[key][blocId]={};
+  if(!data[key][blocId]._links)data[key][blocId]._links=[];
+  data[key][blocId]._links.push({label:"",url:""});
+  save();
+  const container = document.getElementById(`linksarea-${key}-${blocId}`);
+  if(container) renderLinksArea(key, blocId, data[key][blocId]._links, container, color);
+}
+
+function updateLink(key, blocId, idx, field, val){
+  if(!data[key]?.[blocId]?._links)return;
+  data[key][blocId]._links[idx][field]=val;
+  save();
+}
+
+function removeLink(key, blocId, idx){
+  if(!data[key]?.[blocId]?._links)return;
+  data[key][blocId]._links.splice(idx,1);
+  save();
+  const b = BLOCS_RAPIDES.find(x=>x.id===blocId);
+  const container = document.getElementById(`linksarea-${key}-${blocId}`);
+  if(container) renderLinksArea(key, blocId, data[key][blocId]._links, container, b?.color||"#888");
+}
+
+// ── ZEPP PHOTOS ───────────────────────────────────────────────────────────────
+function handleZeppPhotos(e, key){
+  const files = Array.from(e.target.files);
+  if(!data[key])data[key]={};
+  if(!data[key].sport)data[key].sport={};
+  if(!data[key].sport._zepp_photos)data[key].sport._zepp_photos=[];
+  let loaded=0;
+  files.forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      data[key].sport._zepp_photos.push(ev.target.result);
+      loaded++;
+      if(loaded===files.length){
+        save();
+        const thumbs=document.getElementById("zepp-thumbs-"+key);
+        if(thumbs) thumbs.innerHTML=(data[key].sport._zepp_photos||[]).map((s,i)=>`<div style="position:relative"><img src="${s}" style="width:70px;height:70px;object-fit:cover;border:1px solid #2A2A2A;"><button onclick="delZeppPhoto('${key}',${i})" style="position:absolute;top:1px;right:1px;background:rgba(0,0,0,.8);color:white;border:none;font-size:9px;cursor:pointer;padding:2px 4px;">✕</button></div>`).join('');
+      }
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function delZeppPhoto(key, idx){
+  if(!data[key]?.sport?._zepp_photos)return;
+  data[key].sport._zepp_photos.splice(idx,1);
+  save();
+  const thumbs=document.getElementById("zepp-thumbs-"+key);
+  if(thumbs) thumbs.innerHTML=(data[key].sport._zepp_photos||[]).map((s,i)=>`<div style="position:relative"><img src="${s}" style="width:70px;height:70px;object-fit:cover;border:1px solid #2A2A2A;"><button onclick="delZeppPhoto('${key}',${i})" style="position:absolute;top:1px;right:1px;background:rgba(0,0,0,.8);color:white;border:none;font-size:9px;cursor:pointer;padding:2px 4px;">✕</button></div>`).join('');
+}
+
+// ── ANALYSE IA ────────────────────────────────────────────────────────────────
+async function runAI(key, blocId, aiType){
+  const respEl = document.getElementById(`ai-resp-${key}-${blocId}`);
+  if(!respEl)return;
+  respEl.innerHTML = `<span class="ai-loading">⏳ Analyse en cours...</span>`;
+  const dayData = data[key]||{};
+
+  let prompt = "";
+  if(aiType==="sport"){
+    const sd = dayData.sport||{};
+    const zepp = (sd._zepp_photos||[]);
+    prompt = `Tu es coach sportif de Henri Cruzel, 57 ans, chef-restaurateur, pratique judo + rowing + moto enduro. Programme 12 semaines. Voici les données de sa séance du ${key} :
+Type : ${sd.type||"—"} | Durée : ${sd.duree||"—"} | Contenu/Zepp : ${sd.contenu||"—"} | Ressenti : ${sd.ressenti||"—"} | Intensité : ${sd.intensite||0}/5
+${zepp.length>0?"[Fiche Zepp jointe en image]":""}
+Donne une analyse courte (5-7 lignes max) : points positifs, points d'attention, recommandation pour la prochaine séance. Ton direct, concret, motivant.`;
+  } else if(aiType==="bilan"){
+    const bd = dayData.bilan||{};
+    const cuisine = dayData.cuisine||{};
+    const sport = dayData.sport||{};
+    const ct = dayData.ct||{};
+    prompt = `Tu es le coach et conseiller stratégique de Henri Cruzel (57 ans, chef-restaurateur en cession, lance Cantal Trip). Voici sa journée du ${key} :
+CUISINE : ${cuisine.couverts_midi||0} couverts midi + ${cuisine.couverts_gastro||0} gastro + ${cuisine.couverts_soir||0} soir | CA : ${cuisine.ca||"—"}€ | Remarque : ${cuisine.remarque||"—"}
+SPORT : ${sport.statut==="done"?"✓ Fait":"✗ Non fait"} | ${sport.type||"—"} | Intensité : ${sport.intensite||0}/5
+BUREAU CT : ${ct.statut==="done"?"✓ Fait":"✗ Non fait"} | Axe : ${ct.axe||"—"} | Réalisé : ${ct.realise||"—"}
+BILAN PERSO HENRI : ${bd.marquant||"(vide)"} | Priorité demain : ${bd.demain||"—"} | Énergie : ${bd.energie_g||0}/5 | Charge mentale : ${bd.charge||0}/5
+Génère un bilan IA succinct (6-8 lignes) : lecture de la journée, point de vigilance, projection sur le reste de la semaine. Tutoiement, ton direct.`;
+  }
+
+  try {
+    // Construire le contenu (avec image si Zepp)
+    const messages_content = [{type:"text", text:prompt}];
+    if(aiType==="sport"){
+      const zepps = (dayData.sport?._zepp_photos||[]);
+      zepps.slice(0,2).forEach(src=>{
+        const parts = src.split(",");
+        const mime = parts[0].match(/:(.*?);/)?.[1]||"image/jpeg";
+        messages_content.push({type:"image", source:{type:"base64", media_type:mime, data:parts[1]}});
+      });
+    }
+
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        messages:[{role:"user", content:messages_content}]
+      })
+    });
+    const json = await res.json();
+    const txt = json.content?.[0]?.text || "Erreur de réponse.";
+    respEl.textContent = txt;
+    // Sauvegarder l'analyse
+    if(!data[key])data[key]={};
+    if(!data[key][blocId])data[key][blocId]={};
+    data[key][blocId]._ai_analysis = txt;
+    save();
+  } catch(e){
+    respEl.innerHTML = `<span style="color:#FF5722">Erreur : ${e.message}</span>`;
+  }
+}
+
+// ── PHOTOS ────────────────────────────────────────────────────────────────────
+function refreshPhotoGrid(key, grid, photos){
+  grid.innerHTML="";
+  photos.forEach((src,i)=>{
+    const wrap=document.createElement("div");
+    wrap.className="photo-modal-thumb";
+    wrap.innerHTML=`<img src="${src}" onclick="openLightbox('${src}')">
+      <button class="photo-del" onclick="deletePhoto('${key}',${i})">✕</button>`;
+    grid.appendChild(wrap);
+  });
+  const add=document.createElement("div");
+  add.className="add-photo-modal"; add.textContent="📷";
+  add.onclick=()=>document.getElementById("photoInput-"+key).click();
+  grid.appendChild(add);
+}
+
+function handlePhotos(e,key){
+  const files=Array.from(e.target.files);
+  if(!data[key])data[key]={};
+  if(!data[key]._photos)data[key]._photos=[];
+  let loaded=0;
+  files.forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      data[key]._photos.push(ev.target.result);
+      loaded++;
+      if(loaded===files.length){
+        save();
+        const grid=document.getElementById("photoGrid-"+key);
+        if(grid)refreshPhotoGrid(key,grid,data[key]._photos);
+        renderWeek();
+      }
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function deletePhoto(key,idx){
+  if(!data[key]?._photos)return;
+  data[key]._photos.splice(idx,1);
+  save();
+  const grid=document.getElementById("photoGrid-"+key);
+  if(grid)refreshPhotoGrid(key,grid,data[key]._photos);
+  renderWeek();
+}
+
+function setDayVal(key,bloc,field,val){
+  if(!data[key])data[key]={};
+  if(!data[key][bloc])data[key][bloc]={};
+  data[key][bloc][field]=val;
+  save(); renderWeek();
+  if(field==="statut"){
+    const sec=document.getElementById("ms-"+bloc);
+    if(sec){
+      sec.querySelectorAll(".status-btn").forEach(b=>{
+        b.classList.remove("active-done","active-planned","active-blocked");
+        if(val==="done"&&b.textContent.includes("Fait"))b.classList.add("active-done");
+        if(val==="planned"&&b.textContent.includes("Prévu"))b.classList.add("active-planned");
+        if(val==="blocked"&&b.textContent.includes("Bloqué"))b.classList.add("active-blocked");
+      });
+    }
+  }
+}
+
+function modalStar(key,bid,fid,n,color){
+  const bd=data[key]?.[bid]||{};
+  const cur=parseInt(bd[fid])||0; const nv=n===cur?0:n;
+  setDayVal(key,bid,fid,nv);
+  for(let i=1;i<=5;i++){
+    const s=document.getElementById(`ms-${key}-${bid}-${fid}-${i}`);
+    if(s){s.classList.toggle("on",i<=nv);s.style.color=i<=nv?color:"#222";}
+  }
+  const sv=document.getElementById(`msv-${key}-${bid}-${fid}`);
+  if(sv)sv.textContent=nv?nv+"/5":"";
+}
+
+function closeModal(){document.getElementById("modal").classList.add("hidden");currentDate=null;}
+function closeModalOut(e){if(e.target.id==="modal")closeModal();}
+function openLightbox(src){document.getElementById("lightboxImg").src=src;document.getElementById("lightbox").classList.remove("hidden");}
+function closeLightbox(){document.getElementById("lightbox").classList.add("hidden");}
+
+// ── BILAN SEMAINE ─────────────────────────────────────────────────────────────
+function renderBilan(){
+  const dates=getWeekDates(weekOffset);
+  let totalCA=0,totalCv=0,sportDone=0,ctDone=0,totalPhotos=0;
+  let totalSecCT=0,totalSecMaint=0,totalSecCommer=0,totalSecAsso=0;
+  const joursBilan=[];
+
+  dates.forEach(d=>{
+    const key=dateKey(d);
+    const dd=data[key]||{};
+    const cuisine=dd.cuisine||{};
+    const sport=dd.sport||{};
+    const ct=dd.ct||{};
+    const cv=(parseInt(cuisine.cv_menu_midi)||0)+(parseInt(cuisine.cv_menu_soir)||0)+(parseInt(cuisine.cv_carte_midi)||0)+(parseInt(cuisine.cv_carte_soir)||0)+(parseInt(cuisine.cv_gastro)||0)+(parseInt(cuisine.emport_midi)||0)+(parseInt(cuisine.emport_soir)||0);
+    const ca=parseFloat(cuisine.ca)||0;
+    totalCA+=ca; totalCv+=cv;
+    if(sport.statut==="done")sportDone++;
+    if(ct.statut==="done")ctDone++;
+    totalPhotos+=(dd._photos||[]).length;
+    totalSecCT      += parseInt(dd.ct?._timer_sec)||0;
+    totalSecMaint   += parseInt(dd.maintenance?._timer_sec)||0;
+    totalSecCommer  += parseInt(dd.commer?._timer_sec)||0;
+    totalSecAsso    += parseInt(dd.asso?._timer_sec)||0;
+    joursBilan.push({d,key,dd,cv,ca});
+  });
+
+  const totalSecProd = totalSecCT+totalSecMaint+totalSecCommer+totalSecAsso;
+
+  const stats=document.getElementById("weekStats");
+  const pctCT     = totalSecProd>0?Math.round(totalSecCT/totalSecProd*100):0;
+  const pctMaint  = totalSecProd>0?Math.round(totalSecMaint/totalSecProd*100):0;
+  const pctCommer = totalSecProd>0?Math.round(totalSecCommer/totalSecProd*100):0;
+  const pctAsso   = totalSecProd>0?Math.round(totalSecAsso/totalSecProd*100):0;
+
+  stats.innerHTML=[
+    {l:"CA Semaine",   v:totalCA>0?totalCA.toLocaleString("fr")+" €":"—", c:"#E8C40A", s:"Total restauration"},
+    {l:"Couverts",     v:totalCv>0?totalCv:"—",                           c:"#E8440A", s:"Menu · Carte · Gastro · Emporté"},
+    {l:"Sport",        v:`${sportDone}/7`,                                 c:"#4CAF50", s:"Séances réalisées"},
+    {l:"Axes CT",      v:`${ctDone}/7`,                                    c:"#FF6B35", s:"Travail CT effectué"},
+    {l:"Photos",       v:totalPhotos,                                      c:"#7C3AED", s:"Mémos visuels"},
+  ].map(s=>`<div class="stat-card" style="border-left-color:${s.c}">
+    <div class="stat-lbl">${s.l}</div>
+    <div class="stat-val" style="color:${s.c}">${s.v}</div>
+    <div class="stat-sub">${s.s}</div>
+  </div>`).join("");
+
+  // Bloc répartition horaire
+  const timerBloc = document.getElementById("weekTimerStats") || (() => {
+    const el = document.createElement("div");
+    el.id = "weekTimerStats";
+    stats.parentNode.insertBefore(el, stats.nextSibling);
+    return el;
+  })();
+
+  if(totalSecProd > 0){
+    const barW = (sec, total) => total>0 ? Math.max(2,Math.round(sec/total*100)) : 0;
+    timerBloc.innerHTML = `
+      <div style="background:#0D0D0D;border:1px solid #1E1E1E;padding:14px 18px;margin-top:12px;">
+        <div style="font-size:10px;color:#E8C40A;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">
+          ⏱ RÉPARTITION DES HEURES — SEMAINE
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+          ${[
+            {l:"🗺️ Bureau CT",   sec:totalSecCT,     c:"#FF6B35"},
+            {l:"🔧 Entretien",   sec:totalSecMaint,  c:"#78909C"},
+            {l:"🤝 Commer.",     sec:totalSecCommer, c:"#2563EB"},
+            {l:"🏅 Asso/Évén.",  sec:totalSecAsso,   c:"#DB2777"},
+          ].map(t=>`<div style="background:#111;border:1px solid #1E1E1E;border-left:3px solid ${t.c};padding:10px;">
+            <div style="font-size:11px;color:#888;margin-bottom:4px;">${t.l}</div>
+            <div style="font-size:20px;font-weight:900;color:${t.c};">${t.sec>0?secToHM(t.sec):"—"}</div>
+            <div style="font-size:10px;color:#555;margin-top:2px;">${t.sec>0?(totalSecProd>0?Math.round(t.sec/totalSecProd*100)+"%":""):"non chrono"}</div>
+          </div>`).join("")}
+        </div>
+        <div style="margin-bottom:6px;font-size:10px;color:#555;letter-spacing:1px;">TOTAL CHRONOMÉTRÉ — ${secToHM(totalSecProd)}</div>
+        <div style="background:#1A1A1A;height:12px;border-radius:2px;display:flex;overflow:hidden;">
+          ${[
+            {sec:totalSecCT,    c:"#FF6B35"},
+            {sec:totalSecMaint, c:"#78909C"},
+            {sec:totalSecCommer,c:"#2563EB"},
+            {sec:totalSecAsso,  c:"#DB2777"},
+          ].map(t=>t.sec>0?`<div style="background:${t.c};width:${barW(t.sec,totalSecProd)}%;transition:width .4s;"></div>`:"").join("")}
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:10px;color:#666;">
+          <span style="color:#FF6B35">■ Bureau CT</span>
+          <span style="color:#78909C">■ Entretien</span>
+          <span style="color:#2563EB">■ Commer.</span>
+          <span style="color:#DB2777">■ Asso</span>
+        </div>
+      </div>`;
+  } else {
+    timerBloc.innerHTML = `<div style="font-size:11px;color:#444;padding:10px 0;font-style:italic;">⏱ Démarre le chrono dans chaque bloc pour voir la répartition horaire ici.</div>`;
+  }
+
+  const detail=document.getElementById("bilanDetail");
+  detail.innerHTML=`<div style="display:grid;gap:7px;">
+    ${joursBilan.map(({d,key,dd,cv,ca})=>{
+      const sport=dd.sport||{};const ct=dd.ct||{};const bilan=dd.bilan||{};
+      const eg=parseInt(bilan.energie_g)||0;
+      const charge=parseInt(bilan.charge)||0;
+      const photos=(dd._photos||[]).length;
+      const idx=getWeekDates(weekOffset).findIndex(x=>dateKey(x)===key);
+      return `<div style="background:var(--dark);border:1px solid var(--border);${isToday(d)?"border-left:3px solid var(--orange)":""};padding:12px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;cursor:pointer" onclick="openModal(new Date('${d.toISOString()}'))">
+        <div style="min-width:80px"><div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:1px">${JOURS_FULL[idx>=0?idx:0]}</div>
+          <div style="font-size:18px;font-weight:900;${isToday(d)?"color:var(--orange)":""}">${d.getDate()} ${MOIS_FR[d.getMonth()]}</div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:12px;">
+          ${cv>0?`<span style="color:#E8C40A">${cv} cv${ca>0?" · "+ca.toLocaleString("fr")+" €":""}</span>`:""}
+          ${sport.statut==="done"?`<span style="color:#4CAF50">⚡ ${sport.type||"Sport"}</span>`:sport.statut==="planned"?`<span style="color:#E8C40A">⚡ Prévu</span>`:`<span style="color:#2A2A2A">⚡ —</span>`}
+          ${ct.statut==="done"?`<span style="color:#FF6B35">🗺️ ${ct.axe||"CT fait"}</span>`:ct.statut==="planned"?`<span style="color:#E8C40A">🗺️ Prévu</span>`:`<span style="color:#2A2A2A">🗺️ —</span>`}
+          ${eg>0?`<span style="color:#7C3AED">${"★".repeat(eg)+"☆".repeat(5-eg)}</span>`:""}
+          ${charge>0?`<span style="color:#444">Charge ${charge}/5</span>`:""}
+          ${photos>0?`<span style="color:#7C3AED">📷 ${photos}</span>`:""}
+        </div>
+        ${bilan.marquant?`<div style="font-size:11px;color:var(--txt3);font-style:italic;flex:1;min-width:120px">"${bilan.marquant.slice(0,70)}${bilan.marquant.length>70?"…":""}"</div>`:""}
+        ${bilan._ai_analysis?`<div style="font-size:10px;color:var(--violet);flex-basis:100%;border-top:1px solid #1A1A2A;padding-top:6px;margin-top:4px;">🤖 ${bilan._ai_analysis.slice(0,120)}…</div>`:""}
+      </div>`;
+    }).join("")}
+  </div>`;
+}
+
+// ── Z MENSUEL ─────────────────────────────────────────────────────────────────
+function zKey(){
+  const m=document.getElementById("z-sel-mois")?.value;
+  const a=document.getElementById("z-sel-annee")?.value;
+  return m&&a?`z_${a}_${m}`:null;
+}
+
+function renderZTable(vals){
+  const tbody=document.getElementById("z-tbody");if(!tbody)return;
+  tbody.innerHTML=Z_LIGNES.map(lg=>{
+    const qty=vals?.[lg.id+"_qty"]||"";
+    const ca=vals?.[lg.id+"_ca"]||"";
+    const pm=qty&&ca&&parseFloat(qty)>0?(parseFloat(ca)/parseFloat(qty)).toFixed(2)+" €":"—";
+    return `<tr>
+      <td style="font-size:13px;font-weight:700;color:${lg.color}">${lg.label}</td>
+      <td class="r"><input class="zi" type="number" value="${qty}" placeholder="—" style="border-color:${qty?lg.color+"44":"#1E1E1E"}" oninput="zUpd('${lg.id}','qty',this.value,this)"></td>
+      <td class="r"><input class="zi" type="number" step="0.01" value="${ca}" placeholder="—" style="border-color:${ca?lg.color+"44":"#1E1E1E"}" oninput="zUpd('${lg.id}','ca',this.value,this)"></td>
+      <td class="r" id="pm-${lg.id}" style="color:${lg.color};font-weight:700">${pm}</td>
+    </tr>`;
+  }).join("");
+  zTotaux(vals);
+}
+
+function zUpd(lid,col,val,inp){
+  const key=zKey();if(!key)return;
+  if(!data[key])data[key]={};
+  data[key][lid+"_"+col]=val;
+  inp.style.borderColor=val?Z_LIGNES.find(l=>l.id===lid).color+"44":"#1E1E1E";
+  const qty=parseFloat(data[key][lid+"_qty"])||0,ca=parseFloat(data[key][lid+"_ca"])||0;
+  const pmEl=document.getElementById("pm-"+lid);
+  if(pmEl)pmEl.textContent=qty>0&&ca>0?(ca/qty).toFixed(2)+" €":"—";
+  zTotaux(data[key]);
+}
+
+function zTotaux(vals){
+  let tQ=0,tC=0;
+  // Taxe de séjour exclue du CA (hors CA commercial)
+  Z_LIGNES.forEach(lg=>{
+    if(lg.id==="taxe_sejour") return; // EXCLU du CA
+    tQ+=parseFloat(vals?.[lg.id+"_qty"])||0;
+    tC+=parseFloat(vals?.[lg.id+"_ca"])||0;
+  });
+  const eq=document.getElementById("z-tot-qty"),ec=document.getElementById("z-tot-ca"),ep=document.getElementById("z-tot-pm");
+  if(eq)eq.textContent=tQ>0?tQ.toLocaleString("fr"):"—";
+  if(ec)ec.textContent=tC>0?tC.toLocaleString("fr",{minimumFractionDigits:2,maximumFractionDigits:2})+" €":"—";
+  if(ep)ep.textContent=tQ>0&&tC>0?(tC/tQ).toFixed(2)+" €":"—";
+}
+
+function loadZ(){const key=zKey();renderZTable(key?data[key]||{}:{});}
+
+function saveZ(){
+  const key=zKey();if(!key){alert("Sélectionne un mois et une année.");return;}
+  save();
+  const msg=document.getElementById("z-msg");
+  msg.style.display="inline";setTimeout(()=>msg.style.display="none",2500);
+  renderZHist();
+}
+
+// Import copier-coller depuis Excel
+function cleanNum(s){
+  if(!s)return "";
+  // Enlever €, espaces insécables, espaces, garder chiffres virgule point tiret
+  return s.replace(/€/g,"").replace(/\s/g,"").replace(/\u00a0/g,"").replace(",",".").trim();
+}
+
+function normalize(s){
+  return s.toUpperCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"") // enlever accents
+    .replace(/[^A-Z0-9 ]/g," ")
+    .replace(/\s+/g," ").trim();
+}
+
+function importZPaste(){
+  const raw = document.getElementById("z-paste").value.trim();
+  if(!raw)return;
+  const key = zKey();
+  if(!key){alert("Sélectionne un mois et une année.");return;}
+  if(!data[key])data[key]={};
+
+  const lines = raw.split("\n");
+  let matched = 0;
+  const log = [];
+
+  lines.forEach(line=>{
+    if(!line.trim())return;
+    // Séparer par tab en priorité, sinon par 2+ espaces
+    let parts = line.trim().split("\t");
+    if(parts.length < 2) parts = line.trim().split(/\s{2,}/);
+    if(parts.length < 2) return;
+
+    const nameRaw = normalize(parts[0]);
+    // Extraire tous les nombres — format Excel : Nom | Qté | CA TTC | Panier moy (ignoré)
+    const rawNums = [];
+    const numRx = /[0-9]+[,.]?[0-9]*/g;
+    let m;
+    const lineNoName = line.slice(parts[0].length);
+    while((m=numRx.exec(lineNoName))!==null) rawNums.push(m[0].replace(",","."));
+    const qty = rawNums[0] || "";
+    const ca  = rawNums[1] || ""; // rawNums[2] = panier moyen calculé, ignoré
+
+    // Matching souple : on cherche le Z_LIGNE dont le label normalisé est le plus proche
+    let bestMatch = null;
+    let bestScore = 0;
+    Z_LIGNES.forEach(lg=>{
+      const lbl = normalize(lg.label);
+      // Score = nb de mots en commun
+      const lblWords = lbl.split(" ");
+      const rawWords = nameRaw.split(" ");
+      const common = lblWords.filter(w=>w.length>2&&rawWords.some(r=>r.includes(w)||w.includes(r)));
+      if(common.length > bestScore){
+        bestScore = common.length;
+        bestMatch = lg;
+      }
+    });
+
+    if(bestMatch && bestScore > 0){
+      if(qty)data[key][bestMatch.id+"_qty"]=qty;
+      if(ca)data[key][bestMatch.id+"_ca"]=ca;
+      matched++;
+      log.push(`✓ "${parts[0].trim()}" → ${bestMatch.label} (qty:${qty} ca:${ca})`);
+    } else {
+      log.push(`✗ Non reconnu : "${parts[0].trim()}"`);
+    }
+  });
+
+  if(matched>0){
+    save();
+    renderZTable(data[key]);
+    const msg = document.getElementById("z-import-msg");
+    msg.textContent = `✓ ${matched} ligne(s) importée(s)`;
+    msg.style.display="inline";
+    setTimeout(()=>msg.style.display="none",4000);
+    document.getElementById("z-paste").value="";
+    console.log("Import Z :", log.join("\n"));
+  } else {
+    alert("Aucune correspondance trouvée.\n\nEssaie de coller directement depuis Excel avec Cmd+C sur les cellules.\n\nLignes reçues :\n"+lines.slice(0,5).join("\n"));
+    console.log("Import Z :", log.join("\n"));
+  }
+}
+
+function renderZHist(){
+  const el=document.getElementById("z-hist");if(!el)return;
+  const keys=Object.keys(data).filter(k=>k.startsWith("z_")).sort().reverse();
+  if(!keys.length){el.innerHTML=`<div style="font-size:13px;color:var(--txt3);font-style:italic;padding:8px 0">Aucun Z enregistré.</div>`;return;}
+  el.innerHTML=keys.map(key=>{
+    const parts=key.split("_"),annee=parts[1],mois=parts[2],vals=data[key];
+    let tQ=0,tC=0;
+    Z_LIGNES.forEach(lg=>{
+      if(lg.id==="taxe_sejour") return; // EXCLU du CA
+      tQ+=parseFloat(vals?.[lg.id+"_qty"])||0;tC+=parseFloat(vals?.[lg.id+"_ca"])||0;
+    });
+    const pm=tQ>0&&tC>0?(tC/tQ).toFixed(2):null;
+    const actives=Z_LIGNES.filter(lg=>parseFloat(vals?.[lg.id+"_ca"])>0);
+    return `<div style="background:#0C0C0C;border:1px solid rgba(232,196,10,.15);border-left:3px solid var(--gold);padding:12px 14px;margin-bottom:6px;">
+      <div style="font-size:14px;font-weight:900;margin-bottom:5px">${mois} ${annee}</div>
+      <div style="font-size:12px;color:var(--txt2);margin-bottom:8px;line-height:1.8">CA TTC : <strong style="color:var(--gold)">${tC.toLocaleString("fr",{minimumFractionDigits:2,maximumFractionDigits:2})} €</strong> · Qtés : <strong>${tQ.toLocaleString("fr")}</strong>${pm?` · Panier moy. : <strong>${pm} €</strong>`:""}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${actives.map(lg=>`<span style="font-size:10px;padding:2px 8px;background:${lg.color}15;color:${lg.color};border:1px solid ${lg.color}30">${lg.label} ${parseFloat(vals[lg.id+"_ca"]).toLocaleString("fr",{minimumFractionDigits:2,maximumFractionDigits:2})} €</span>`).join("")}</div>
+    </div>`;
+  }).join("");
+}
+
+// ── LANCEUR OUTILS ────────────────────────────────────────────────────────────
+function renderTools(){
+  const tools = data._tools || [];
+  const grid = document.getElementById("toolsGrid");
+  if(!grid)return;
+  grid.innerHTML = tools.length===0 ? `<div style="font-size:13px;color:var(--txt3);font-style:italic;grid-column:1/-1">Aucun outil ajouté. Utilise le formulaire ci-dessous.</div>` : "";
+  tools.forEach((t,i)=>{
+    const card = document.createElement("div");
+    card.className = "tool-card";
+    card.innerHTML = `
+      <a href="${t.url}" target="_blank">🔗 ${esc(t.name)}</a>
+      ${t.desc?`<div class="tool-desc">${esc(t.desc)}</div>`:""}
+      <button class="tool-del" onclick="removeTool(${i})">✕ Supprimer</button>`;
+    grid.appendChild(card);
+  });
+}
+
+function addTool(){
+  const name = document.getElementById("tool-name").value.trim();
+  const url  = document.getElementById("tool-url").value.trim();
+  const desc = document.getElementById("tool-desc").value.trim();
+  if(!name||!url){alert("Nom et URL requis.");return;}
+  if(!data._tools)data._tools=[];
+  data._tools.push({name,url,desc});
+  save();
+  renderTools();
+  document.getElementById("tool-name").value="";
+  document.getElementById("tool-url").value="";
+  document.getElementById("tool-desc").value="";
+}
+
+function removeTool(i){
+  if(!data._tools)return;
+  data._tools.splice(i,1);
+  save();
+  renderTools();
+}
+
+// ── PARAMÈTRES ────────────────────────────────────────────────────────────────
+function renderParams(){
+  const lists = getLists();
+  const PARAM_LABELS = {
+    sport_type:        "⚡ Types de sport",
+    ct_axe:            "🗺️ Axes Cantal Trip",
+    maintenance_zone:  "🔧 Zones entretien",
+    asso_projet:       "🏅 Projets asso",
+    heberg_type:       "🏨 Types hébergement",
+  };
+
+  const container = document.getElementById("paramsContent");
+  container.innerHTML = "";
+
+  Object.entries(PARAM_LABELS).forEach(([key,label])=>{
+    const items = lists[key] || [];
+    const sec = document.createElement("div");
+    sec.className = "param-section";
+    sec.innerHTML = `<h3>${label}</h3>`;
+    const list = document.createElement("div");
+    list.className = "param-list";
+    list.id = `paramlist-${key}`;
+
+    items.forEach((item,i)=>{
+      const row = document.createElement("div");
+      row.className = "param-item";
+      row.innerHTML = `<input type="text" value="${esc(item)}" oninput="updateParamItem('${key}',${i},this.value)">
+        <button onclick="removeParamItem('${key}',${i})">✕</button>`;
+      list.appendChild(row);
+    });
+
+    sec.appendChild(list);
+    const addBtn = document.createElement("button");
+    addBtn.className = "add-param-btn";
+    addBtn.textContent = "+ Ajouter une option";
+    addBtn.onclick = ()=>addParamItem(key);
+    sec.appendChild(addBtn);
+    container.appendChild(sec);
+  });
+
+  // ── SAUVEGARDE / RÉCUPÉRATION ──────────────────────────────────────────────
+  const backupSec = document.createElement("div");
+  backupSec.className = "param-section";
+  backupSec.innerHTML = `
+    <h3>💾 SAUVEGARDE & RÉCUPÉRATION DES DONNÉES</h3>
+    <div style="font-size:11px;color:#888;margin-bottom:12px;line-height:1.7;">
+      En cas de changement de poste ou de navigateur, utilise ces boutons pour exporter/importer toutes tes données.
+      La sync Google Sheets est automatique, mais le backup JSON reste la sécurité finale.
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+      <button onclick="exportJSON()" style="background:#1A1A0A;border:1px solid var(--gold);color:var(--gold);padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:1px;">⬇ EXPORTER — backup.json</button>
+      <label style="background:#0A1A0A;border:1px solid #4CAF50;color:#4CAF50;padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;display:inline-block;">
+        ⬆ IMPORTER — Charger backup.json
+        <input type="file" accept=".json" onchange="importJSON(event)" style="display:none;">
+      </label>
+    </div>
+    <div id="backup-msg" style="font-size:12px;color:#4CAF50;display:none;margin-bottom:10px;padding:8px 12px;background:#0A1A0A;border:1px solid #4CAF5044;"></div>
+    <div style="background:#0D0D0D;border:1px solid #1A1A1A;padding:10px 14px;">
+      <div style="font-size:10px;color:#555;letter-spacing:1px;margin-bottom:6px;text-transform:uppercase;">Forcer rechargement depuis GitHub</div>
+      <button onclick="forceReload()" style="background:#0A0A1A;border:1px solid #2563EB;color:#5FA8F5;padding:7px 16px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">🔄 Resynchroniser depuis Sheets</button>
+      <div style="font-size:10px;color:#444;margin-top:6px;">Si tu viens de changer de poste, clique ici pour récupérer tes données depuis GitHub.</div>
+    </div>`;
+  container.appendChild(backupSec);
+}
+
+function getOrInitLists(){
+  if(!data._lists)data._lists = JSON.parse(JSON.stringify(DEFAULT_LISTS));
+  return data._lists;
+}
+
+function updateParamItem(key,i,val){
+  const lists = getOrInitLists();
+  if(!lists[key])lists[key]=[];
+  lists[key][i]=val;
+  data._lists=lists;
+  save();
+}
+
+function removeParamItem(key,i){
+  const lists = getOrInitLists();
+  lists[key].splice(i,1);
+  data._lists=lists;
+  save();
+  renderParams();
+}
+
+function addParamItem(key){
+  const lists = getOrInitLists();
+  if(!lists[key])lists[key]=[];
+  lists[key].push("Nouvelle option");
+  data._lists=lists;
+  save();
+  renderParams();
+  // Focus sur le dernier item
+  setTimeout(()=>{
+    const list = document.getElementById(`paramlist-${key}`);
+    if(list){const inputs=list.querySelectorAll("input");if(inputs.length)inputs[inputs.length-1].focus();}
+  },80);
+}
+
+// ── EXPORT / IMPORT JSON ──────────────────────────────────────────────────────
+function exportJSON(){
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {type:"application/json"});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `journal_cruzel_backup_${date}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function importJSON(e){
+  const file = e.target.files[0]; if(!file)return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if(typeof imported !== "object" || Array.isArray(imported)) throw new Error("Format invalide");
+      const keys = Object.keys(imported).length;
+      if(!confirm(`Importer ${keys} entrées depuis ${file.name} ?\n\nCela REMPLACERA toutes les données actuelles.`)) return;
+      data = imported;
+      try { localStorage.setItem(SK, JSON.stringify(data)); } catch(e){}
+      save();
+      renderWeek();
+      loadZ();
+      renderTools();
+      const msg = document.getElementById("backup-msg");
+      if(msg){ msg.textContent = `✓ Import réussi — ${keys} entrées chargées depuis ${file.name}`; msg.style.display="block"; setTimeout(()=>msg.style.display="none", 5000); }
+    } catch(err){
+      alert("Erreur lors de l'import : " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function forceReload(){
+  showSync("⏳ Rechargement depuis GitHub...", "#F5C842");
+  try {
+    const res = await fetch(GH_API + "?t=" + Date.now(), { headers: ghHeaders() });
+    if(res.ok){
+      const json = await res.json();
+      _ghSha = json.sha;
+      const decoded = JSON.parse(atob(json.content.replace(/\n/g,"")));
+      if(Object.keys(decoded).length > 0){
+        data = decoded;
+        try { localStorage.setItem(SK, JSON.stringify(data)); } catch(e){}
+        showSync("✓ GitHub rechargé", "#5DD87A");
+        renderWeek(); loadZ(); renderTools();
+        const msg = document.getElementById("backup-msg");
+        if(msg){ msg.textContent = `✓ Données récupérées depuis GitHub — ${Object.keys(data).length} entrées`; msg.style.display="block"; setTimeout(()=>msg.style.display="none", 5000); }
+      } else {
+        showSync("⚠ GitHub vide", "#F5C842");
+        alert("Le fichier data.json sur GitHub est vide.\nUtilise le bouton IMPORTER si tu as un backup.json.");
+      }
+    } else if(res.status === 404){
+      showSync("⚠ Pas encore de données sur GitHub", "#F5C842");
+      alert("Aucun fichier data.json trouvé sur GitHub.\nSauvegarde d\'abord depuis ce poste.");
+    } else {
+      showSync("⚠ GitHub erreur " + res.status, "#FF5722");
+    }
+  } catch(e){
+    showSync("⚠ Connexion impossible", "#FF5722");
+    alert("Impossible de contacter GitHub.\n\nVérifie ta connexion.");
+  }
+}
+
+// ── TABS ───────────────────────────────────────────────────────────────────────
+function switchTab(tab,btn){
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+  document.getElementById("tab-"+tab).classList.add("active");
+  if(tab==="bilan")renderBilan();
+  if(tab==="z_mois"){loadZ();renderZHist();}
+  if(tab==="outils")renderTools();
+  if(tab==="params")renderParams();
+  if(tab==="cession")renderCession();
+}
+
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+
+
+// ── TABLEAU DE BORD CESSION ───────────────────────────────────────────────────
+const OBJECTIF_CESSION = 600000;
+const CA_BASE_2025 = 453005;
+
+const OBJ_2026 = [
+  {m:"Janvier",   obj:30118,  gites:2000,  resto:8896},
+  {m:"Février",   obj:32654,  gites:2500,  resto:11798},
+  {m:"Mars",      obj:26489,  gites:3000,  resto:9364},
+  {m:"Avril",     obj:38423,  gites:3500,  resto:12496},
+  {m:"Mai",       obj:47416,  gites:4500,  resto:15254},
+  {m:"Juin",      obj:50375,  gites:5000,  resto:11705},
+  {m:"Juillet",   obj:56147,  gites:7000,  resto:24757},
+  {m:"Août",      obj:71571,  gites:8000,  resto:29784},
+  {m:"Septembre", obj:41755,  gites:7500,  resto:11918},
+  {m:"Octobre",   obj:41378,  gites:5500,  resto:15376},
+  {m:"Novembre",  obj:33522,  gites:3500,  resto:12921},
+  {m:"Décembre",  obj:31846,  gites:2551,  resto:15218},
+];
+const OBJ_2026_TOTAL = 501694;
+
+// Trajectoire cession 2025→2029
+const TRAJECTOIRE = [
+  {annee:2025, ca:453005, gites:28488,  sejours:47},
+  {annee:2026, ca:489000, gites:54551,  sejours:90},
+  {annee:2027, ca:527000, gites:72735,  sejours:120},
+  {annee:2028, ca:565000, gites:90919,  sejours:150},
+  {annee:2029, ca:603000, gites:109103, sejours:180},
+];
+
+function getCessionCA(){
+  // Calcule le CA réel saisi dans le journal par mois 2026
+  const reels = {};
+  Object.keys(data).forEach(key=>{
+    if(!key.match(/^2026-/)) return;
+    const moisIdx = parseInt(key.split("-")[1]) - 1;
+    const dd = data[key] || {};
+    const ca = parseFloat(dd.cuisine?.ca) || 0;
+    const gites_ca = parseFloat(dd.hebergement?.ca_gites) || 0;
+    if(!reels[moisIdx]) reels[moisIdx] = {ca:0, couverts:0, gites:0};
+    reels[moisIdx].ca += ca;
+    reels[moisIdx].gites += gites_ca;
+    const cvts = (parseInt(dd.cuisine?.cv_menu_midi)||0)+(parseInt(dd.cuisine?.cv_menu_soir)||0)+(parseInt(dd.cuisine?.cv_carte_midi)||0)+(parseInt(dd.cuisine?.cv_carte_soir)||0)+(parseInt(dd.cuisine?.cv_gastro)||0)+(parseInt(dd.cuisine?.emport_midi)||0)+(parseInt(dd.cuisine?.emport_soir)||0);
+    reels[moisIdx].couverts += cvts;
+  });
+  // Ajouter Z mensuels si saisis
+  OBJ_2026.forEach((o,i)=>{
+    const zk = `z_2026_${o.m}`;
+    if(data[zk]){
+      const ca_z = Object.entries(data[zk])
+        .filter(([k])=>k.endsWith('_ca'))
+        .reduce((s,[,v])=>s+parseFloat(v)||0, 0);
+      if(!reels[i]) reels[i] = {ca:0, couverts:0, gites:0};
+      if(ca_z > reels[i].ca) reels[i].ca = ca_z; // priorité au Z
+    }
+  });
+  return reels;
+}
+
+function renderCession(){
+  const el = document.getElementById("cessionContent");
+  if(!el) return;
+  const reels = getCessionCA();
+
+  // CA réel 2026 cumulé
+  const ca_reel_total = Object.values(reels).reduce((s,v)=>s+v.ca, 0);
+  const moisEnCours = new Date().getMonth(); // 0-11
+  const obj_cumul_auj = OBJ_2026.slice(0,moisEnCours+1).reduce((s,o)=>s+o.obj, 0);
+  const ecart = ca_reel_total - obj_cumul_auj;
+  const pct_annuel = ca_reel_total / OBJ_2026_TOTAL * 100;
+  const pct_cession = (CA_BASE_2025 + ca_reel_total) / OBJECTIF_CESSION * 100;
+
+  el.innerHTML = `
+    <!-- TITRE -->
+    <div style="font-size:10px;color:var(--orange);font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+      📈 TABLEAU DE BORD CESSION — OBJECTIF 600k€ — 2029
+    </div>
+
+    <!-- JAUGES PRINCIPALES -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
+      <div style="background:#0D0D0D;border:1px solid var(--border);border-left:3px solid var(--gold);padding:14px;">
+        <div style="font-size:10px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">CA RÉEL 2026</div>
+        <div style="font-size:28px;font-weight:900;color:var(--gold);">${ca_reel_total>0?ca_reel_total.toLocaleString("fr")+" €":"— €"}</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:4px;">Objectif : ${OBJ_2026_TOTAL.toLocaleString("fr")} €</div>
+        <div style="margin-top:8px;background:#1A1A1A;height:6px;border-radius:2px;">
+          <div style="background:var(--gold);height:100%;width:${Math.min(pct_annuel,100).toFixed(1)}%;border-radius:2px;transition:width .5s;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--gold);margin-top:4px;">${pct_annuel.toFixed(1)}% de l'objectif annuel</div>
+      </div>
+
+      <div style="background:#0D0D0D;border:1px solid var(--border);border-left:3px solid var(--orange);padding:14px;">
+        <div style="font-size:10px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">ÉCART VS OBJECTIF</div>
+        <div style="font-size:28px;font-weight:900;color:${ecart>=0?"var(--vert)":"var(--orange)"};">${ecart>=0?"+":""}${ca_reel_total>0?ecart.toLocaleString("fr"):"—"} €</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:4px;">${moisEnCours+1} mois écoulés en 2026</div>
+        <div style="font-size:11px;color:${ecart>=0?"var(--vert)":"var(--orange)"};margin-top:8px;">${ca_reel_total>0?(ecart>=0?"✓ Dans la trajectoire":"⚠ Retard à combler"):"Commence à saisir ton CA"}</div>
+      </div>
+
+      <div style="background:#0D0D0D;border:1px solid var(--border);border-left:3px solid var(--violet);padding:14px;">
+        <div style="font-size:10px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">TRAJECTOIRE CESSION</div>
+        <div style="font-size:28px;font-weight:900;color:var(--violet);">${pct_cession.toFixed(1)}%</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:4px;">Vers l'objectif 600k€</div>
+        <div style="margin-top:8px;background:#1A1A1A;height:6px;border-radius:2px;">
+          <div style="background:var(--violet);height:100%;width:${Math.min(pct_cession,100).toFixed(1)}%;border-radius:2px;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--violet);margin-top:4px;">Base 2025 : ${CA_BASE_2025.toLocaleString("fr")} €</div>
+      </div>
+    </div>
+
+    <!-- OBJECTIFS MENSUELS 2026 -->
+    <div style="font-size:10px;color:var(--gold);font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">OBJECTIFS MENSUELS 2026</div>
+    <div style="overflow-x:auto;margin-bottom:20px;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#1A1A1A;border-bottom:2px solid var(--gold);">
+          <th style="padding:8px 10px;text-align:left;font-size:10px;color:var(--gold);letter-spacing:1px;">MOIS</th>
+          <th style="padding:8px 10px;text-align:right;font-size:10px;color:var(--gold);letter-spacing:1px;">OBJECTIF</th>
+          <th style="padding:8px 10px;text-align:right;font-size:10px;color:var(--gold);letter-spacing:1px;">RÉEL</th>
+          <th style="padding:8px 10px;text-align:right;font-size:10px;color:var(--gold);letter-spacing:1px;">ÉCART</th>
+          <th style="padding:8px 10px;text-align:left;font-size:10px;color:var(--gold);letter-spacing:1px;">BARRE</th>
+        </tr></thead>
+        <tbody>
+          ${OBJ_2026.map((o,i)=>{
+            const r = reels[i] || {ca:0};
+            const ec = r.ca - o.obj;
+            const pct = r.ca>0 ? Math.min(r.ca/o.obj*100,100) : 0;
+            const isCurrent = i === moisEnCours;
+            const isPast = i < moisEnCours;
+            const color = r.ca>=o.obj?"var(--vert)":r.ca>0?"var(--orange)":"var(--txt3)";
+            return `<tr style="border-bottom:1px solid #161616;${isCurrent?"background:#161610":isPast&&r.ca===0?"opacity:.5":""}">
+              <td style="padding:8px 10px;font-weight:${isCurrent?"900":"400"};color:${isCurrent?"var(--orange)":"var(--txt)"};">${o.m}${isCurrent?' <span style="font-size:9px;color:var(--orange)">◀ EN COURS</span>':''}</td>
+              <td style="padding:8px 10px;text-align:right;color:var(--txt2);">${o.obj.toLocaleString("fr")} €</td>
+              <td style="padding:8px 10px;text-align:right;font-weight:700;color:${color};">${r.ca>0?r.ca.toLocaleString("fr")+" €":"—"}</td>
+              <td style="padding:8px 10px;text-align:right;color:${ec>=0?"var(--vert)":"var(--orange)"};">${r.ca>0?(ec>=0?"+":"")+ec.toLocaleString("fr")+" €":"—"}</td>
+              <td style="padding:8px 10px;min-width:100px;">
+                <div style="background:#1A1A1A;height:6px;border-radius:2px;width:100%;">
+                  <div style="background:${color};height:100%;width:${pct.toFixed(0)}%;border-radius:2px;"></div>
+                </div>
+              </td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+        <tfoot><tr style="background:#1A1A1A;border-top:2px solid var(--gold);">
+          <td style="padding:10px;font-weight:900;color:var(--gold);font-size:13px;">TOTAL 2026</td>
+          <td style="padding:10px;text-align:right;font-weight:900;color:var(--gold);">${OBJ_2026_TOTAL.toLocaleString("fr")} €</td>
+          <td style="padding:10px;text-align:right;font-weight:900;color:${ca_reel_total>=OBJ_2026_TOTAL?"var(--vert)":"var(--txt2)"};">${ca_reel_total>0?ca_reel_total.toLocaleString("fr")+" €":"—"}</td>
+          <td style="padding:10px;text-align:right;color:${ecart>=0?"var(--vert)":"var(--orange)"};">${ca_reel_total>0?(ecart>=0?"+":"")+ecart.toLocaleString("fr")+" €":"—"}</td>
+          <td></td>
+        </tr></tfoot>
+      </table>
+    </div>
+
+    <!-- TRAJECTOIRE 2025-2029 -->
+    <div style="font-size:10px;color:var(--violet);font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">TRAJECTOIRE VERS LA CESSION</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px;">
+      ${TRAJECTOIRE.map(t=>{
+        const pct = Math.min(t.ca/OBJECTIF_CESSION*100,100);
+        const isTarget = t.ca>=OBJECTIF_CESSION;
+        const isCurrent = t.annee===2026;
+        return `<div style="background:#0D0D0D;border:1px solid ${isTarget?"var(--vert)":isCurrent?"var(--orange)":"var(--border)"};padding:12px;text-align:center;">
+          <div style="font-size:18px;font-weight:900;color:${isTarget?"var(--vert)":isCurrent?"var(--orange)":"var(--txt2)"};">${t.annee}</div>
+          <div style="font-size:14px;font-weight:700;color:${isTarget?"var(--vert)":"var(--gold)"};margin:6px 0;">${(t.ca/1000).toFixed(0)}k€</div>
+          <div style="background:#1A1A1A;height:4px;border-radius:2px;margin:6px 0;">
+            <div style="background:${isTarget?"var(--vert)":isCurrent?"var(--orange)":"var(--violet)"};height:100%;width:${pct.toFixed(0)}%;border-radius:2px;"></div>
+          </div>
+          <div style="font-size:10px;color:var(--txt3);">${t.sejours} séjours gîtes</div>
+          ${isTarget?'<div style="font-size:11px;color:var(--vert);margin-top:4px;">🎯 CESSION</div>':""}
+        </div>`;
+      }).join("")}
+    </div>
+
+    <!-- 3 LEVIERS -->
+    <div style="font-size:10px;color:var(--orange);font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">LES 3 LEVIERS DE CROISSANCE</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
+      <div style="background:#0D0D0D;border:1px solid #1A3A1A;border-left:3px solid var(--vert);padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--vert);margin-bottom:8px;">🏡 GÎTES</div>
+        <div style="font-size:11px;color:var(--txt2);line-height:1.8;">
+          2025 : <strong>47 séjours — 28k€</strong><br>
+          2026 : <strong style="color:var(--gold)">90 séjours — 55k€</strong><br>
+          2029 : <strong>180 séjours — 109k€</strong><br>
+          Levier : remplir jan→juin
+        </div>
+      </div>
+      <div style="background:#0D0D0D;border:1px solid #3A2A1A;border-left:3px solid var(--gold);padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px;">🍳 RESTAURANT</div>
+        <div style="font-size:11px;color:var(--txt2);line-height:1.8;">
+          2025 : <strong>9 885 cvts — 16,66€/cv</strong><br>
+          2026 : <strong style="color:var(--gold)">+1,5€/cv → +15k€</strong><br>
+          2029 : <strong>+7€/cv → +69k€</strong><br>
+          Levier : panier moyen + carte
+        </div>
+      </div>
+      <div style="background:#0D0D0D;border:1px solid #1A1A3A;border-left:3px solid var(--bleu);padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--bleu);margin-bottom:8px;">🏨 HÔTEL</div>
+        <div style="font-size:11px;color:var(--txt2);line-height:1.8;">
+          2025 : <strong>615 nuits — 52k€</strong><br>
+          2026 : <strong style="color:var(--gold)">700 nuits — 59k€</strong><br>
+          2029 : <strong>800 nuits — 68k€</strong><br>
+          Levier : événements + groupes
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYSE IA -->
+    <div style="background:#0D0D1A;border:1px solid #2A2A3A;border-left:3px solid var(--violet);padding:16px;">
+      <div style="font-size:10px;color:var(--violet);font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">🤖 ANALYSE IA — TRAJECTOIRE CESSION</div>
+      <div id="cession-ai-resp" style="font-size:13px;line-height:1.8;color:var(--txt2);">${data._cession_ai?.text || '<span style="color:#444;font-style:italic">Clique sur Analyser pour obtenir une lecture de ta trajectoire.</span>'}</div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:6px;">${data._cession_ai?.date ? "Dernière analyse : "+data._cession_ai.date : ""}</div>
+      <button class="ai-btn" onclick="runCessionAI()" style="margin-top:12px;">⚡ Analyser la trajectoire</button>
+    </div>
+  `;
+}
+
+async function runCessionAI(){
+  const el = document.getElementById("cession-ai-resp");
+  if(!el) return;
+  el.innerHTML = '<span style="color:var(--violet);font-style:italic;">⏳ Analyse en cours...</span>';
+
+  const reels = getCessionCA();
+  const ca_reel = Object.values(reels).reduce((s,v)=>s+v.ca,0);
+  const moisEnCours = new Date().getMonth();
+  const obj_cumul = OBJ_2026.slice(0,moisEnCours+1).reduce((s,o)=>s+o.obj,0);
+
+  const prompt = `Tu es le conseiller stratégique de Henri Cruzel, 57 ans, chef-restaurateur en Cantal (Saint-Étienne-de-Maurs).
+CONTEXTE CESSION : Objectif vendre le Complexe Cruzel entre 600k€ et 750k€ de CA en 2029-2030 pour basculer vers Cantal Trip (tourisme moto) et Tsukuri Coaching.
+
+══ POINT ZÉRO — COMPTES ANNUELS 2024 (certifiés expert-comptable SIGMA CONSEIL) ══
+CA HT 2024 : 415 699 € (CA TTC Z : 453 005 €)
+CA HT 2023 : 428 816 € → tendance : -3.1% sur 2 ans
+Résultat d'exploitation : 6 254 € (1.5% du CA) — très faible
+Résultat net : 17 081 € (sauvé par 14 996 € d'exceptionnel : cessions + subventions + IJ)
+CAF : 77 833 € — ratio dette/CAF : 1.8 ans (sain)
+Dettes financières : 143 757 € (emprunts banques, dont PGE en cours)
+Masse salariale totale : 91 741 € (22.1% CA) — effectif moyen 3 personnes
+EBE estimé : ~55 000-60 000 € (base de valorisation pour repreneur)
+
+DÉTAIL CA HT PAR ACTIVITÉ 2024 :
+- Restaurant : 167 919 € (40.4%) → EN BAISSE de -23 217 € vs 2023 (-12.1%) ⚠ SIGNAL CRITIQUE
+- Soirée étape : 46 737 € (11.2%)
+- Hôtel : 43 605 € (10.5%)
+- Gîtes : 42 288 € (10.2%) → EN HAUSSE +12.5% (1ère année exploitation)
+- Ventes à emporter : 37 056 € (8.9%)
+- Pension : 21 645 € (5.2%)
+- Cave : 19 163 € | Bar 20% : 11 456 € | Boutique : 10 001 €
+- Dojo/Petit déj/Tripoux : ~9 000 €
+
+CHARGES CLÉS 2024 :
+- Loyer SCI HRC Immo : 34 601 € (+36% vs 2023 : 25 438 €) — charge structurelle à surveiller
+- Achats matières : 106 866 € (25.7% CA) — bien maîtrisé
+- Autres achats ext. : 150 931 € (36.3% CA)
+- Amortissements : 71 090 € (actif outil 1,25M€ brut, fortement amorti)
+
+PATRIMOINE (actif outil cession) :
+- Immob. brutes : 1 258 527 € — nettes : 334 582 €
+- Dont : agencements gîte n°1 (203 760 €), piscine/sauna/spa, salle sport (29 657 €), conserverie, photovoltaïque (42 400 €)
+- Fonds commercial : 28 127 € (acquis 1990)
+- Subventions restantes : 27 934 € (gîtes FEADER/Région + conserverie)
+
+══ DONNÉES Z 2025 (exercice complet) ══
+CA TTC total 2025 : 453 005 €
+Restaurant : 9 885 couverts — 164 660 € TTC — panier moyen 16,66 €
+Gîtes : 47 séjours — 28 488 € (1ère année complète — 34 couchages — 52 semaines dispo)
+Hôtel : 615 nuits — 52 206 €
+Saisonnalité : T3 (Jul-Sep) = 34% du CA, T1 (Jan-Mar) = 18% seulement
+
+══ SITUATION EN COURS ══
+Date actuelle : ${new Date().toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"})}
+Mois en cours : ${OBJ_2026[moisEnCours].m} 2026
+CA réel 2026 saisi dans le journal : ${ca_reel > 0 ? ca_reel.toLocaleString("fr") + " €" : "pas encore de données saisies — premier usage"}
+Objectif cumulé à fin ${OBJ_2026[moisEnCours].m} : ${obj_cumul.toLocaleString("fr")} €
+Écart vs trajectoire : ${ca_reel > 0 ? (ca_reel - obj_cumul).toLocaleString("fr") + " €" : "à établir dès la première saisie"}
+
+══ TRAJECTOIRE CESSION ══
+2026 → 489k€ | 2027 → 527k€ | 2028 → 565k€ | 2029 → 603k€ ✅
+
+Les 3 leviers prioritaires :
+1. GÎTES : 47 séjours 2025 → 180 en 2029 (panier moyen 606 €/séjour). Priorité : remplir jan-juin vide en 2025.
+2. RESTAURANT : stopper la chute (-12% en 2024) puis +1,75€/panier/an → +7€ en 4 ans = +69k€
+3. HÔTEL : 615 nuits → 800 nuits (+20%) via événements groupes et synergie gîtes
+
+Point de vigilance structurel EI : loyer SCI (+36% en 2024) et résultat d'exploitation quasi nul. La cession doit s'accompagner d'une clarification SCI/fonds.
+
+══ SCI HRC IMMO — ACTIF COMPLÉMENTAIRE CESSION 2030 ══
+Structure : SCI à l'IS — associés Henri 60%, Hélène 30%, 4e associé 10%
+Clôture 30/09/2024 :
+- Bilan total : 667 772 € | CA HT : 42 896 € (+44.6%) | Résultat exploitation : +7 556 €
+- Résultat net : -4 897 € (plombé par 13 385 € d'intérêts — quasi triplement vs N-1)
+- Dettes financières : 467 575 € emprunts + 50 054 € concours bancaires
+- Capitaux propres : 58 539 € (faibles, reports négatifs cumulés)
+- Compte courant Henri Cruzel : 34 157 € (à traiter dans la transaction)
+- 2e groupe de gîtes/groupe : livré et EN EXPLOITATION COMPLÈTE depuis juin 2025 ✅
+- Subvention région 2e gîtes : 73 372 € acquise
+- Actif immobilier brut total : ~800 K€ (constructions finalisées + agencements + terrain)
+- Dette estimée fin 2030 (remboursements normaux) : ~140 K€
+- Valeur vénale SCI (65% coût, rural Cantal) : ~520 K€
+- Valeur titres SCI nette 2030 : 300-380 K€
+
+PROJECTION CA SCI (2e groupe opérationnel) :
+2025 : ~70 K€ (6 mois 2e groupe) | 2026 : ~105 K€ ✅ | 2027 : ~128 K€ | 2028 : ~148 K€ | 2030 : ~169 K€
+→ La SCI franchit les 80 K€ cibles dès 2026 — dossier de cession solide
+
+ENSEMBLE PATRIMONIAL ESTIMÉ 2030 :
+- Fonds EI (0.6-0.8 × CA TTC 603 K€) : 362 - 482 K€
+- Titres SCI (valeur vénale nette) : 300 - 380 K€
+- Compte courant Henri à rembourser : -34 K€
+→ TOTAL : 630 000 - 830 000 € — scénario central ~700 K€
+
+Point technique cession : le loyer SCI (34 601 € en 2024) doit être normalisé dans le dossier EI présenté au repreneur pour ne pas pénaliser l'EBE présenté. La cession peut se structurer en 2 temps : fonds EI puis titres SCI.
+
+Donne une analyse stratégique (10-12 lignes) intégrant EI ET SCI : lecture de la situation actuelle, signal prioritaire sur les deux entités, recommandation concrète pour la semaine en cours. Tutoiement, ton direct et motivant, orienté action. Termine par une phrase de cap vers 2030.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        messages:[{role:"user",content:prompt}]
+      })
+    });
+    const json = await res.json();
+    const txt = json.content?.[0]?.text || "Erreur.";
+    el.textContent = txt;
+    data._cession_ai = {text:txt, date:new Date().toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"})};
+    save();
+  } catch(e){
+    el.innerHTML = `<span style="color:#FF5722">Erreur : ${e.message}</span>`;
+  }
+}
+
+// ── TIMER / COMPTEUR HORAIRES ────────────────────────────────────────────────
+const _timers = {}; // { "key_bloc": { start, elapsed, interval } }
+
+function timerKey(key, bid){ return `${key}_${bid}`; }
+
+function fmtTime(sec){
+  const h = Math.floor(sec/3600);
+  const m = Math.floor((sec%3600)/60);
+  const s = sec%60;
+  return h>0 ? `${h}h${String(m).padStart(2,"0")}` : `${String(m).padStart(2,"0")}m${String(s).padStart(2,"0")}`;
+}
+
+function secToHM(sec){
+  const h = Math.floor(sec/3600);
+  const m = Math.floor((sec%3600)/60);
+  if(h>0 && m>0) return `${h}h${String(m).padStart(2,"0")}`;
+  if(h>0) return `${h}h00`;
+  return `${m}min`;
+}
+
+function parseTimerInput(str){
+  // Accepte : "1h30", "90min", "1:30", "90", "1.5"
+  str = str.trim().toLowerCase();
+  if(!str) return 0;
+  const hm = str.match(/^(\d+)h(\d+)?/);
+  if(hm) return parseInt(hm[1])*3600 + parseInt(hm[2]||0)*60;
+  const min = str.match(/^(\d+)m/);
+  if(min) return parseInt(min[1])*60;
+  const colon = str.match(/^(\d+):(\d+)/);
+  if(colon) return parseInt(colon[1])*3600 + parseInt(colon[2])*60;
+  const dot = str.match(/^(\d+)[.,](\d+)/);
+  if(dot) return Math.round((parseInt(dot[1]) + parseInt(dot[2])/10) * 3600);
+  const num = str.match(/^(\d+)$/);
+  if(num){ const n=parseInt(num[1]); return n<=12 ? n*3600 : n*60; }
+  return 0;
+}
+
+function renderTimer(key, bid, color){
+  const tk = timerKey(key, bid);
+  const stored = data[key]?.[bid]?._timer_sec || 0;
+  const running = !!_timers[tk];
+  const elapsed = stored;
+  return `<div class="timer-box" id="timerbox-${tk}">
+    <div class="timer-display" id="timerdisplay-${tk}">${fmtTime(elapsed)}</div>
+    <button class="timer-btn ${running?"stop":""}" id="timerbtn-${tk}"
+      onclick="timerToggle('${key}','${bid}','${color}')">${running?"⏹ Stop":"▶ Start"}</button>
+    <button class="timer-btn" onclick="timerReset('${key}','${bid}')"
+      style="font-size:10px;padding:4px 8px;opacity:.5;">↺</button>
+    <input class="timer-manual" type="text" placeholder="1h30"
+      title="Saisie manuelle : 1h30, 45min, 1:30"
+      value="${elapsed>0?secToHM(elapsed):""}"
+      onchange="timerManual('${key}','${bid}',this.value)"
+      style="background:#111;color:#ccc;border:1px solid #333;">
+    <span class="timer-total" id="timertotal-${tk}">${elapsed>0?"= "+secToHM(elapsed):""}</span>
+  </div>`;
+}
+
+function timerToggle(key, bid, color){
+  const tk = timerKey(key, bid);
+  if(_timers[tk]){
+    // Stop
+    clearInterval(_timers[tk].interval);
+    const elapsed = _timers[tk].elapsed + Math.floor((Date.now()-_timers[tk].start)/1000);
+    delete _timers[tk];
+    setDayVal(key, bid, "_timer_sec", elapsed);
+    _timerUpdateUI(key, bid, elapsed, false, color);
+  } else {
+    // Start
+    const base = data[key]?.[bid]?._timer_sec || 0;
+    _timers[tk] = { start: Date.now(), elapsed: base, interval: null };
+    _timers[tk].interval = setInterval(()=>{
+      const cur = base + Math.floor((Date.now()-_timers[tk].start)/1000);
+      const disp = document.getElementById(`timerdisplay-${tk}`);
+      const tot  = document.getElementById(`timertotal-${tk}`);
+      if(disp) disp.textContent = fmtTime(cur);
+      if(tot)  tot.textContent  = "= "+secToHM(cur);
+    }, 1000);
+    _timerUpdateUI(key, bid, base, true, color);
+  }
+}
+
+function _timerUpdateUI(key, bid, elapsed, running, color){
+  const tk = timerKey(key, bid);
+  const btn = document.getElementById(`timerbtn-${tk}`);
+  const inp = document.querySelector(`#timerbox-${tk} input`);
+  if(btn){ btn.textContent = running?"⏹ Stop":"▶ Start"; btn.className="timer-btn "+(running?"stop":""); }
+  if(!running){
+    const disp = document.getElementById(`timerdisplay-${tk}`);
+    const tot  = document.getElementById(`timertotal-${tk}`);
+    if(disp) disp.textContent = fmtTime(elapsed);
+    if(tot)  tot.textContent  = elapsed>0?"= "+secToHM(elapsed):"";
+    if(inp)  inp.value = elapsed>0?secToHM(elapsed):"";
+  }
+}
+
+function timerReset(key, bid){
+  const tk = timerKey(key, bid);
+  if(_timers[tk]){ clearInterval(_timers[tk].interval); delete _timers[tk]; }
+  setDayVal(key, bid, "_timer_sec", 0);
+  const disp=document.getElementById(`timerdisplay-${tk}`);
+  const tot=document.getElementById(`timertotal-${tk}`);
+  const inp=document.querySelector(`#timerbox-${tk} input`);
+  if(disp) disp.textContent="00m00";
+  if(tot)  tot.textContent="";
+  if(inp)  inp.value="";
+}
+
+function timerManual(key, bid, val){
+  const sec = parseTimerInput(val);
+  const tk = timerKey(key, bid);
+  if(_timers[tk]){ clearInterval(_timers[tk].interval); delete _timers[tk]; }
+  setDayVal(key, bid, "_timer_sec", sec);
+  const disp=document.getElementById(`timerdisplay-${tk}`);
+  const tot=document.getElementById(`timertotal-${tk}`);
+  const btn=document.getElementById(`timerbtn-${tk}`);
+  if(disp) disp.textContent=fmtTime(sec);
+  if(tot)  tot.textContent=sec>0?"= "+secToHM(sec):"";
+  if(btn)  btn.textContent="▶ Start";
+}
+
+// ── FIN TIMER ─────────────────────────────────────────────────────────────────
+
+// INIT
+document.getElementById("z-sel-mois").value="Mars";
+loadFromSheets();
+</script>
+</body>
+</html>
